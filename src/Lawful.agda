@@ -1,9 +1,9 @@
 module Lawful where
 
 open import Function.Base
-open import Effect.Functor
-open import Effect.Applicative
-open import Effect.Monad
+open import Effect.Functor using (RawFunctor)
+open import Effect.Applicative using (RawApplicative)
+open import Effect.Monad using (RawMonad)
 open import Level
 open import Relation.Binary.PropositionalEquality
 
@@ -18,7 +18,7 @@ record Functor (F : Set ℓ → Set ℓ′) : Set (suc ℓ ⊔ ℓ′) where
   field 
     {{Func}} : RawFunctor F
     
-  open RawFunctor Func
+  open RawFunctor Func public
 
   field
     ident : (x : F A) → (id <$> x) ≡ x
@@ -33,7 +33,7 @@ record Applicative (F : Set ℓ → Set ℓ) : Set (suc ℓ) where
   field
     {{App}} : RawApplicative F
   
-  open RawApplicative App
+  open RawApplicative App public
 
   field
     ident : (v : F A)
@@ -62,16 +62,17 @@ record Applicative (F : Set ℓ → Set ℓ) : Set (suc ℓ) where
       (pure (g ∘′ f) ⊛ x) ∎
     }
 
+  open Functor functor
 
 
 postulate
-  f-ext : ∀ {ℓ} {A B : Set ℓ} {f g : A → B} → (∀ x → f x ≡ g x) → f ≡ g
+  f-ext : ∀ {ℓ ℓ′} {A : Set ℓ} {B : Set ℓ′} {f g : A → B} → (∀ x → f x ≡ g x) → f ≡ g
 
 record Monad (F : Set ℓ → Set ℓ) : Set (suc ℓ) where
   field
     {{Mon}} : RawMonad F
 
-  open RawMonad Mon
+  open RawMonad Mon public
 
   field
     left-id  : (a : A) (k : A → F B)
@@ -120,3 +121,5 @@ record Monad (F : Set ℓ → Set ℓ) : Set (suc ℓ) where
         (u >>= (λ f → return (f y))) ≡⟨ sym (left-id (_$′ y) λ x → u >>= (λ f → return (x f))) ⟩
         (return (_$′ y) >>= (λ x → u >>= (λ f → return (x f)))) ∎
     }
+
+  open Applicative applicative
