@@ -14,18 +14,25 @@ private
     A B X Y : Set ℓ
 
 
-record Functor {F : Set ℓ → Set ℓ′} (Func : RawFunctor F) : Set (suc ℓ ⊔ ℓ′) where
+record Functor (F : Set ℓ → Set ℓ′) : Set (suc ℓ ⊔ ℓ′) where
+  field 
+    {{Func}} : RawFunctor F
+    
   open RawFunctor Func
 
   field
     ident : (x : F A) → (id <$> x) ≡ x
     comp  : ∀ {A B C : Set ℓ} (g : B → C) (f : A → B) (x : F A)
           → (g <$> (f <$> x)) ≡ (g ∘ f <$> x)
+  
 
 open ≡-Reasoning
 
 
-record Applicative {F : Set ℓ → Set ℓ} (App : RawApplicative F) : Set (suc ℓ) where
+record Applicative (F : Set ℓ → Set ℓ) : Set (suc ℓ) where
+  field
+    {{App}} : RawApplicative F
+  
   open RawApplicative App
 
   field
@@ -41,7 +48,11 @@ record Applicative {F : Set ℓ → Set ℓ} (App : RawApplicative F) : Set (suc
     inter : (u : F (A → B)) (y : A)
       → (u ⊛ pure y) ≡ (pure (_$′ y) ⊛ u)
 
-  functor : Functor rawFunctor
+  instance
+    AppFunctor : RawFunctor F
+    AppFunctor = rawFunctor
+
+  functor : Functor F
   functor = record {
     ident = ident ;
     comp  = λ g f x → begin
@@ -56,7 +67,10 @@ record Applicative {F : Set ℓ → Set ℓ} (App : RawApplicative F) : Set (suc
 postulate
   f-ext : ∀ {ℓ} {A B : Set ℓ} {f g : A → B} → (∀ x → f x ≡ g x) → f ≡ g
 
-record Monad {F : Set ℓ → Set ℓ} (Mon : RawMonad F) : Set (suc ℓ) where
+record Monad (F : Set ℓ → Set ℓ) : Set (suc ℓ) where
+  field
+    {{Mon}} : RawMonad F
+
   open RawMonad Mon
 
   field
@@ -67,7 +81,11 @@ record Monad {F : Set ℓ → Set ℓ} (Mon : RawMonad F) : Set (suc ℓ) where
     assoc    : ∀ {A B C} (m : F A) (k : A → F B) (h : B → F C)
       → (m >>= (λ x → k x >>= h)) ≡ ((m >>= k) >>= h)
 
-  applicative : Applicative rawIApplicative
+  instance
+    MonApp : RawApplicative F
+    MonApp = rawIApplicative
+
+  applicative : Applicative F
   applicative = record {
       ident = λ v → begin
         (return id >>= (λ f → v >>= λ x → return (f x))) ≡⟨ left-id id ((λ f → v >>= λ x → return (f x))) ⟩

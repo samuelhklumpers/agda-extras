@@ -6,6 +6,7 @@ open import Categories.Category.Instance.Sets
 import Categories.Functor as Funct
 import Categories.NaturalTransformation as Nat
 import Categories.Monad as Mon
+open import Categories.Adjoint
 
 open Mon.Monad
 
@@ -18,3 +19,4 @@ concreteMonad {o} M@record { F = F ; η = record { η = η ; commute = _ ; sym-c
 
     bind : {A B : Set o} → F.F₀ M A → (A → F.F₀ M B) → F.F₀ M B
     bind {A} {B} x f = μ B (F.F₁ M f x)
+
