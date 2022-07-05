@@ -2,17 +2,25 @@ module Representables where
 
 open import Level
 open import Relation.Binary.PropositionalEquality
-open import Effect.Monad
+open import Effect.Monad.Indexed
 open import Function
+open import Data.Unit
 
-open import Lawful
+open import Extensionality
+open import Functors
+open import Applicatives
+open import Monads
+
+open ≡-Reasoning
+
 
 private
   variable
-    ℓ ℓ′ ℓ″ : Level
+    ℓ ℓ′ i : Level
+    A B C : Set ℓ
 
 
-record _≅_ {ℓ} (A B : Set ℓ) : Set ℓ where
+record _≅_ (A : Set ℓ) (B : Set ℓ′) : Set (ℓ ⊔ ℓ′) where
   field
     to   : A → B
     from : B → A
@@ -20,56 +28,45 @@ record _≅_ {ℓ} (A B : Set ℓ) : Set ℓ where
     section : (y : B) → to (from y) ≡ y
 
 
-{-
--- remark: functors that go down the Set hierarchy are _never_ representable: the level of F A would be lower than that of Rep → A 
-record Representable' (F : Set ℓ → Set (ℓ ⊔ ℓ′)) : Set (suc ℓ ⊔ suc ℓ′) where
+record IRepresentable {I : Set i} (F : I → Set ℓ → Set ℓ) : Set (i ⊔ suc ℓ ⊔ suc ℓ′) where
   field
-    Rep : Set ℓ′
-    iso : (A : Set ℓ) → F A ≅ (Rep → A)
--}
+    Rep : I → Set ℓ′
+    iso : ∀ {i} → (A : Set ℓ) → F i A ≅ (Rep i → A)
 
-
-open ≡-Reasoning
-
-record Representable (F : Set (ℓ ⊔ ℓ′) → Set (ℓ ⊔ ℓ′)) : Set (suc (ℓ ⊔ ℓ′)) where
-  field
-    Rep : Set ℓ′
-    iso : (A : Set (ℓ ⊔ ℓ′)) → F A ≅ (Rep → A)
-
-  index : {A : Set (ℓ ⊔ ℓ′)} → F A → Rep → A
+  index : ∀ {i} → F i A → Rep i → A
   index {A} = _≅_.to (iso A)
-  tabulate : {A : Set (ℓ ⊔ ℓ′)} → (Rep → A) → F A
+  tabulate : ∀ {i} → (Rep i → A) → F i A
   tabulate {A} = _≅_.from (iso A)
 
   instance
-    RepMon : RawMonad F
+    RepMon : ∀ {i} → RawIMonad {I = ⊤} (λ _ _ → F i)
     RepMon = record {
       return = λ x   → tabulate (const x) ;
       _>>=_  = λ m f → tabulate (λ a → index (f (index m a)) a) }
 
   private
-    retract : {A : Set (ℓ ⊔ ℓ′)} (k : F A) → tabulate (index k) ≡ k
+    retract : ∀ {i} → (k : F i A) → tabulate (index k) ≡ k
     retract {A} = _≅_.retract (iso A)
-    section : {A : Set (ℓ ⊔ ℓ′)} (f : Rep → A) → index (tabulate f) ≡ f
+    section : ∀ {i} → (f : Rep i → A) → index (tabulate f) ≡ f
     section {A} = _≅_.section (iso A)
 
-    left-lem : {A B : Set (ℓ ⊔ ℓ′)} (a : A) (k : A → F B) → (λ b → index (k (index (tabulate (const a)) b)) b) ≡ index (k a)
+    left-lem : ∀ {i} (a : A) (k : A → F i B) → (λ b → index (k (index (tabulate (const a)) b)) b) ≡ index (k a)
     left-lem a k = f-ext λ i → begin
       index (k (index (tabulate (const a)) i)) i ≡⟨ cong (λ z → index (k (z i)) i) (section (const a)) ⟩
       index (k a) i ∎
       
-    right-lem : ∀ {A} (m : F A) → (λ a → index (tabulate (const (index m a))) a) ≡ index m
+    right-lem : ∀ {i} (m : F i A) → (λ a → index (tabulate (const (index m a))) a) ≡ index m
     right-lem m = f-ext λ i → begin
       index (tabulate (const (index m i))) i ≡⟨ cong (λ z → z i) (section (const (index m i))) ⟩
       index m i ∎
 
-    assoc-lem : ∀ {A B C}  (m : F A) (k : A → F B) (h : B → F C) (i : Rep) → index (tabulate (λ a → index (h (index (k (index m i)) a)) a)) i ≡ index (h (index (tabulate (λ a → index (k (index m a)) a)) i)) i
-    assoc-lem m k h i = begin
-      index (tabulate (λ a → index (h (index (k (index m i)) a)) a)) i ≡⟨ cong (λ z → z i) (section (λ a → index (h (index (k (index m i)) a)) a)) ⟩
-      index (h (index (k (index m i)) i)) i ≡⟨ cong (λ z → index (h (z i)) i) (sym (section (λ a → index (k (index m a)) a))) ⟩
-      index (h (index (tabulate (λ a → index (k (index m a)) a)) i)) i ∎
+    assoc-lem : ∀ {i} (m : F i A) (k : A → F i B) (h : B → F i C) (a : Rep i) → index (tabulate (λ b → index (h (index (k (index m a)) b)) b)) a ≡ index (h (index (tabulate (λ b → index (k (index m b)) b)) a)) a
+    assoc-lem m k h a = begin
+      index (tabulate (λ b → index (h (index (k (index m a)) b)) b)) a ≡⟨ cong (λ z → z a) (section (λ b → index (h (index (k (index m a)) b)) b)) ⟩
+      index (h (index (k (index m a)) a)) a ≡⟨ cong (λ z → index (h (z a)) a) (sym (section (λ b → index (k (index m b)) b))) ⟩
+      index (h (index (tabulate (λ b → index (k (index m b)) b)) a)) a ∎
 
-  monad : Monad F
+  monad : ∀ {i} → IMonad {I = ⊤} (λ _ _ → F i)
   monad = record {
     left-id = λ a k → begin
       tabulate (λ j → index (k (index (tabulate (const a)) j)) j) ≡⟨ cong tabulate (left-lem a k) ⟩
@@ -81,5 +78,5 @@ record Representable (F : Set (ℓ ⊔ ℓ′) → Set (ℓ ⊔ ℓ′)) : Set (
       m ∎ ;
     assoc = λ m k h → cong tabulate (f-ext (λ i → assoc-lem m k h i)) }
 
-  open Monad monad public
+  open module IM {i : I} = IMonad (monad {i = i}) public
 
