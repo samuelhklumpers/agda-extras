@@ -25,20 +25,20 @@ module VecEx where
 
 
   instance
-    VecRep : ∀ {ℓ} → IRepresentable {ℓ = ℓ} Vec'
-    VecRep = record {
-      Rep = Fin ;
+    VecRep : ∀ {n ℓ} → Representable {ℓ = ℓ} (Vec' n)
+    VecRep {n} = record {
+      Rep = Fin n ;
       iso = λ A → record {
         to = lookup ;
         from = tabulate ;
         retract = λ v → tabulate∘lookup v ;
         section = section' } }
           where
-            section' : ∀ {n} {A : Set ℓ} → (f : Fin n → A) → lookup (tabulate f) ≡ f
+            section' : {A : Set ℓ} → (f : Fin n → A) → lookup (tabulate f) ≡ f
             section' f = f-ext (λ i → lookup∘tabulate f i)
 
 
-  open module IR {ℓ} = IRepresentable {ℓ = ℓ} VecRep
+  open module IR {ℓ} {n} = Representable {ℓ = ℓ} (VecRep {n = n})
 
   ex1 : Vec ℕ 2
   ex1 = (_+ 1) <$> 0 ∷ 1 ∷ []

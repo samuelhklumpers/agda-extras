@@ -19,8 +19,6 @@ private
     ℓ i : Level
     A B C : Set ℓ
 
-paired : {I : Set i} → IFun I ℓ → I × I → Set ℓ → Set ℓ
-paired f (i , j) = f i j
 
 record IApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
   field
@@ -45,7 +43,7 @@ record IApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
     AppFunctor : {(i , j) : I × I} → RawFunctor (F i j)
     AppFunctor = rawFunctor
 
-  functor : IFunctor (paired F)
+  functor : ∀ {i j} → Functor (F i j)
   functor = record {
     ident = ident ;
     comp  = λ g f x → begin

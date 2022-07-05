@@ -8,16 +8,16 @@ open import Relation.Binary.PropositionalEquality using (_≡_)
 
 private
   variable
-    ℓ ℓ′ i : Level
+    ℓ ℓ′ : Level
     A B C : Set ℓ
 
-record IFunctor {I : Set i} (F : I → Set ℓ → Set ℓ′) : Set (i ⊔ suc ℓ ⊔ ℓ′) where
+record Functor (F : Set ℓ → Set ℓ′) : Set (suc ℓ ⊔ ℓ′) where
   field 
-    {{Func}} : ∀ {i} → RawFunctor (F i)
+    {{Func}} : RawFunctor F
     
-  open module RF {i : I} = RawFunctor (Func {i = i}) public
+  open RawFunctor Func public
 
   field
-    ident : ∀ {i} → (x : F i A) → (id <$> x) ≡ x
-    comp  : ∀ {i} → (g : B → C) (f : A → B) (x : F i A)
+    ident : (x : F A) → (id <$> x) ≡ x
+    comp  : (g : B → C) (f : A → B) (x : F A)
           → (g <$> (f <$> x)) ≡ (g ∘′ f <$> x)

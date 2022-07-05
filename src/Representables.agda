@@ -16,7 +16,7 @@ open ≡-Reasoning
 
 private
   variable
-    ℓ ℓ′ i : Level
+    ℓ ℓ′ : Level
     A B C : Set ℓ
 
 
@@ -28,45 +28,45 @@ record _≅_ (A : Set ℓ) (B : Set ℓ′) : Set (ℓ ⊔ ℓ′) where
     section : (y : B) → to (from y) ≡ y
 
 
-record IRepresentable {I : Set i} (F : I → Set ℓ → Set ℓ) : Set (i ⊔ suc ℓ ⊔ suc ℓ′) where
+record Representable (F : Set ℓ → Set ℓ) : Set (suc ℓ ⊔ suc ℓ′) where
   field
-    Rep : I → Set ℓ′
-    iso : ∀ {i} → (A : Set ℓ) → F i A ≅ (Rep i → A)
+    Rep : Set ℓ′
+    iso : (A : Set ℓ) → F A ≅ (Rep → A)
 
-  index : ∀ {i} → F i A → Rep i → A
+  index : F A → Rep → A
   index {A} = _≅_.to (iso A)
-  tabulate : ∀ {i} → (Rep i → A) → F i A
+  tabulate : (Rep → A) → F A
   tabulate {A} = _≅_.from (iso A)
 
   instance
-    RepMon : ∀ {i} → RawIMonad {I = ⊤} (λ _ _ → F i)
+    RepMon : RawIMonad {I = ⊤} (λ _ _ → F)
     RepMon = record {
       return = λ x   → tabulate (const x) ;
       _>>=_  = λ m f → tabulate (λ a → index (f (index m a)) a) }
 
   private
-    retract : ∀ {i} → (k : F i A) → tabulate (index k) ≡ k
+    retract : (k : F A) → tabulate (index k) ≡ k
     retract {A} = _≅_.retract (iso A)
-    section : ∀ {i} → (f : Rep i → A) → index (tabulate f) ≡ f
+    section : (f : Rep → A) → index (tabulate f) ≡ f
     section {A} = _≅_.section (iso A)
 
-    left-lem : ∀ {i} (a : A) (k : A → F i B) → (λ b → index (k (index (tabulate (const a)) b)) b) ≡ index (k a)
+    left-lem : (a : A) (k : A → F B) → (λ b → index (k (index (tabulate (const a)) b)) b) ≡ index (k a)
     left-lem a k = f-ext λ i → begin
       index (k (index (tabulate (const a)) i)) i ≡⟨ cong (λ z → index (k (z i)) i) (section (const a)) ⟩
       index (k a) i ∎
       
-    right-lem : ∀ {i} (m : F i A) → (λ a → index (tabulate (const (index m a))) a) ≡ index m
+    right-lem : (m : F A) → (λ a → index (tabulate (const (index m a))) a) ≡ index m
     right-lem m = f-ext λ i → begin
       index (tabulate (const (index m i))) i ≡⟨ cong (λ z → z i) (section (const (index m i))) ⟩
       index m i ∎
 
-    assoc-lem : ∀ {i} (m : F i A) (k : A → F i B) (h : B → F i C) (a : Rep i) → index (tabulate (λ b → index (h (index (k (index m a)) b)) b)) a ≡ index (h (index (tabulate (λ b → index (k (index m b)) b)) a)) a
+    assoc-lem : (m : F A) (k : A → F B) (h : B → F C) (a : Rep) → index (tabulate (λ b → index (h (index (k (index m a)) b)) b)) a ≡ index (h (index (tabulate (λ b → index (k (index m b)) b)) a)) a
     assoc-lem m k h a = begin
       index (tabulate (λ b → index (h (index (k (index m a)) b)) b)) a ≡⟨ cong (λ z → z a) (section (λ b → index (h (index (k (index m a)) b)) b)) ⟩
       index (h (index (k (index m a)) a)) a ≡⟨ cong (λ z → index (h (z a)) a) (sym (section (λ b → index (k (index m b)) b))) ⟩
       index (h (index (tabulate (λ b → index (k (index m b)) b)) a)) a ∎
 
-  monad : ∀ {i} → IMonad {I = ⊤} (λ _ _ → F i)
+  monad : IMonad {I = ⊤} (λ _ _ → F)
   monad = record {
     left-id = λ a k → begin
       tabulate (λ j → index (k (index (tabulate (const a)) j)) j) ≡⟨ cong tabulate (left-lem a k) ⟩
@@ -78,5 +78,5 @@ record IRepresentable {I : Set i} (F : I → Set ℓ → Set ℓ) : Set (i ⊔ s
       m ∎ ;
     assoc = λ m k h → cong tabulate (f-ext (λ i → assoc-lem m k h i)) }
 
-  open module IM {i : I} = IMonad (monad {i = i}) public
+  open IMonad monad public
 
