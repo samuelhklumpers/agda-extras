@@ -1,3 +1,5 @@
+{-# OPTIONS --without-K #-}
+
 module Extensionality where
 
 open import Relation.Binary.PropositionalEquality using (_≡_)

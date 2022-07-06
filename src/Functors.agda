@@ -18,6 +18,10 @@ record Functor (F : Set ℓ → Set ℓ′) : Set (suc ℓ ⊔ ℓ′) where
   open RawFunctor Func public
 
   field
-    ident : (x : F A) → (id <$> x) ≡ x
-    comp  : (g : B → C) (f : A → B) (x : F A)
+    f-ident : (x : F A) → (id <$> x) ≡ x
+    f-comp  : (g : B → C) (f : A → B) (x : F A)
           → (g <$> (f <$> x)) ≡ (g ∘′ f <$> x)
+
+open Functor {{...}} public
+
+

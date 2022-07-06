@@ -1,11 +1,16 @@
+{-# OPTIONS --guardedness --overlapping-instances #-}
+
+
 module Examples where
 
 open import Relation.Binary.PropositionalEquality
-open import Data.Vec
+open import Data.Vec as V
 open import Level
 open import Data.Vec.Properties
-open import Data.Nat
+open import Data.Nat renaming (suc to succ)
 open import Data.Fin using (Fin)
+open import Data.Unit
+open import Effect.Applicative.Indexed
 
 open import Functors
 open import Applicatives
@@ -17,6 +22,7 @@ open import Extensionality
 private
   variable
     ℓ : Level
+    A B : Set ℓ
 
 
 module VecEx where
@@ -30,15 +36,12 @@ module VecEx where
       Rep = Fin n ;
       iso = λ A → record {
         to = lookup ;
-        from = tabulate ;
+        from = V.tabulate ;
         retract = λ v → tabulate∘lookup v ;
         section = section' } }
           where
-            section' : {A : Set ℓ} → (f : Fin n → A) → lookup (tabulate f) ≡ f
+            section' : {A : Set ℓ} → (f : Fin n → A) → lookup (V.tabulate f) ≡ f
             section' f = f-ext (λ i → lookup∘tabulate f i)
-
-
-  open module IR {ℓ} {n} = Representable {ℓ = ℓ} (VecRep {n = n})
 
   ex1 : Vec ℕ 2
   ex1 = (_+ 1) <$> 0 ∷ 1 ∷ []
@@ -46,3 +49,26 @@ module VecEx where
   test1 : ex1 ≡ 1 ∷ 2 ∷ []
   test1 = refl
 
+
+module FunAppEx where
+  FunF : Set ℓ → Set ℓ → Set ℓ
+  FunF a b = a → b
+
+  FunF' : Set ℓ → ⊤ → ⊤ → Set ℓ → Set ℓ
+  FunF' a _ _ = FunF a
+
+  instance
+    RawAppFun : RawIApplicative (FunF' B)
+    RawAppFun = record { pure = λ x y → x ; _⊛_ = λ f g x → f x (g x) }
+
+  instance
+    AppFun : IApplicative (FunF' B)
+    AppFun = record {
+      a-ident = λ v → f-ext λ x → refl ;
+      a-comp = λ u v w → f-ext λ x → refl ;
+      hom = λ f x → refl ;
+      inter = λ u y → refl }
+
+
+  ex1 : {A B C : Set ℓ} → (B → C) → (A → B) → A → C
+  ex1 g f = g <$> f

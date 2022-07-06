@@ -8,8 +8,8 @@ open import Level using (Level; suc; _⊔_)
 open import Relation.Binary.PropositionalEquality
 
 open import Extensionality
-open import Functors
-open import Applicatives
+--open import Functors
+open import Applicatives public
 
 private
   variable
@@ -23,7 +23,7 @@ record IMonad {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
   field
     {{Mon}} : RawIMonad F
 
-  open RawIMonad Mon public
+  open RawIMonad Mon using (return; _>>=_; rawIApplicative) public
 
   field
     left-id  : ∀ {i j} → (a : A) (f : A → F i j B)
@@ -37,13 +37,17 @@ record IMonad {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
     MonApp : RawIApplicative F
     MonApp = rawIApplicative
 
-  applicative : IApplicative F
+open IMonad {{...}} public
+
+
+instance
+  applicative : {I : Set i} {F : IFun I ℓ} → {{IMonad F}} → IApplicative F
   applicative = record {
-      ident = λ v → begin
+      a-ident = λ v → begin
         (return id >>= (λ f → v >>= λ x → return (f x))) ≡⟨ left-id id ((λ f → v >>= λ x → return (f x))) ⟩
         (v >>= return) ≡⟨ right-id v ⟩
         v ∎ ;
-      comp  = λ u v w → begin
+      a-comp  = λ u v w → begin
         ((((return _∘′_ >>= (λ c → u >>= (λ g → return (c g)))) >>= (λ g' → v >>= (λ f → return (g' f)))) >>= (λ f' → w >>= (λ x → return (f' x)))))
             ≡⟨ cong (λ k → (k >>= (λ g' → v >>= (λ f → return (g' f)))) >>= (λ f' → w >>= (λ x → return (f' x)))) (left-id _∘′_ λ c → u >>= (λ g → return (c g))) ⟩
         (((u >>= (λ g → return (g ∘′_))) >>= (λ g' → v >>= (λ f → return (g' f)))) >>= (λ f' → w >>= (λ x → return (f' x))))

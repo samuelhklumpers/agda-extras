@@ -6,8 +6,9 @@ open import Effect.Applicative.Indexed using (RawIApplicative; IFun)
 open import Level using (Level; suc; _⊔_)
 open import Relation.Binary.PropositionalEquality
 open import Data.Product
+open import Level renaming (zero to lzero)
 
-open import Functors
+open import Functors public
 
 
 open ≡-Reasoning
@@ -24,13 +25,13 @@ record IApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
   field
     {{App}} : RawIApplicative F
   
-  open RawIApplicative App public
+  open RawIApplicative App using (pure; _⊛_; rawFunctor) public
 
   field
-    ident : ∀ {i j} → (v : F i j A)
+    a-ident : ∀ {i j} → (v : F i j A)
       → (pure id ⊛ v) ≡ v
       
-    comp  : ∀ {i j k l} → (u : F i j (B → C)) (v : F j k (A → B)) (w : F k l A)
+    a-comp  : ∀ {i j k l} → (u : F i j (B → C)) (v : F j k (A → B)) (w : F k l A)
       → (((pure _∘′_ ⊛ u) ⊛ v) ⊛ w) ≡ (u ⊛ (v ⊛ w))
       
     hom   : ∀ {i} → (f : A → B) (x : A)
@@ -43,11 +44,16 @@ record IApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
     AppFunctor : {(i , j) : I × I} → RawFunctor (F i j)
     AppFunctor = rawFunctor
 
-  functor : ∀ {i j} → Functor (F i j)
+open IApplicative {{...}} public
+
+instance 
+  functor : {I : Set i} {k l : I} {F : IFun I ℓ} → {{IApplicative F}} → Functor (F k l)
   functor = record {
-    ident = ident ;
-    comp  = λ g f x → begin
-      (pure g ⊛ (pure f ⊛ x))               ≡⟨ sym (comp (pure g) (pure f) x) ⟩
+    f-ident = a-ident ;
+    f-comp  = λ g f x → begin
+      (pure g ⊛ (pure f ⊛ x))               ≡⟨ sym (a-comp (pure g) (pure f) x) ⟩
       (((pure _∘′_ ⊛ pure g) ⊛ pure f) ⊛ x) ≡⟨ cong (λ y → (y ⊛ pure f) ⊛ x) (hom _∘′_ g) ⟩
       ((pure (g ∘′_) ⊛ pure f) ⊛ x)         ≡⟨ cong (_⊛ x) (hom (_∘′_ g) f) ⟩  
       (pure (g ∘′ f) ⊛ x) ∎ }
+
+

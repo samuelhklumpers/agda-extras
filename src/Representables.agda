@@ -7,9 +7,7 @@ open import Function
 open import Data.Unit
 
 open import Extensionality
-open import Functors
-open import Applicatives
-open import Monads
+open import Monads public
 
 open ≡-Reasoning
 
@@ -44,39 +42,38 @@ record Representable (F : Set ℓ → Set ℓ) : Set (suc ℓ ⊔ suc ℓ′) wh
       return = λ x   → tabulate (const x) ;
       _>>=_  = λ m f → tabulate (λ a → index (f (index m a)) a) }
 
-  private
-    retract : (k : F A) → tabulate (index k) ≡ k
-    retract {A} = _≅_.retract (iso A)
-    section : (f : Rep → A) → index (tabulate f) ≡ f
-    section {A} = _≅_.section (iso A)
+  repRetract : (k : F A) → tabulate (index k) ≡ k
+  repRetract {A} = _≅_.retract (iso A)
+  repSection : (f : Rep → A) → index (tabulate f) ≡ f
+  repSection {A} = _≅_.section (iso A)
 
-    left-lem : (a : A) (k : A → F B) → (λ b → index (k (index (tabulate (const a)) b)) b) ≡ index (k a)
-    left-lem a k = f-ext λ i → begin
-      index (k (index (tabulate (const a)) i)) i ≡⟨ cong (λ z → index (k (z i)) i) (section (const a)) ⟩
-      index (k a) i ∎
-      
-    right-lem : (m : F A) → (λ a → index (tabulate (const (index m a))) a) ≡ index m
-    right-lem m = f-ext λ i → begin
-      index (tabulate (const (index m i))) i ≡⟨ cong (λ z → z i) (section (const (index m i))) ⟩
-      index m i ∎
+  left-lem : (a : A) (k : A → F B) → (λ b → index (k (index (tabulate (const a)) b)) b) ≡ index (k a)
+  left-lem a k = f-ext λ i → begin
+    index (k (index (tabulate (const a)) i)) i ≡⟨ cong (λ z → index (k (z i)) i) (repSection (const a)) ⟩
+    index (k a) i ∎
 
-    assoc-lem : (m : F A) (k : A → F B) (h : B → F C) (a : Rep) → index (tabulate (λ b → index (h (index (k (index m a)) b)) b)) a ≡ index (h (index (tabulate (λ b → index (k (index m b)) b)) a)) a
-    assoc-lem m k h a = begin
-      index (tabulate (λ b → index (h (index (k (index m a)) b)) b)) a ≡⟨ cong (λ z → z a) (section (λ b → index (h (index (k (index m a)) b)) b)) ⟩
-      index (h (index (k (index m a)) a)) a ≡⟨ cong (λ z → index (h (z a)) a) (sym (section (λ b → index (k (index m b)) b))) ⟩
-      index (h (index (tabulate (λ b → index (k (index m b)) b)) a)) a ∎
+  right-lem : (m : F A) → (λ a → index (tabulate (const (index m a))) a) ≡ index m
+  right-lem m = f-ext λ i → begin
+    index (tabulate (const (index m i))) i ≡⟨ cong (λ z → z i) (repSection (const (index m i))) ⟩
+    index m i ∎
 
-  monad : IMonad {I = ⊤} (λ _ _ → F)
+  assoc-lem : (m : F A) (k : A → F B) (h : B → F C) (a : Rep) → index (tabulate (λ b → index (h (index (k (index m a)) b)) b)) a ≡ index (h (index (tabulate (λ b → index (k (index m b)) b)) a)) a
+  assoc-lem m k h a = begin
+    index (tabulate (λ b → index (h (index (k (index m a)) b)) b)) a ≡⟨ cong (λ z → z a) (repSection (λ b → index (h (index (k (index m a)) b)) b)) ⟩
+    index (h (index (k (index m a)) a)) a ≡⟨ cong (λ z → index (h (z a)) a) (sym (repSection (λ b → index (k (index m b)) b))) ⟩
+    index (h (index (tabulate (λ b → index (k (index m b)) b)) a)) a ∎
+  
+open Representable {{...}} public
+
+instance
+  monad : {F : Set ℓ → Set ℓ} → {{Representable {ℓ′ = ℓ′} F}} → IMonad {I = ⊤} (λ _ _ → F)
   monad = record {
     left-id = λ a k → begin
       tabulate (λ j → index (k (index (tabulate (const a)) j)) j) ≡⟨ cong tabulate (left-lem a k) ⟩
-      tabulate (index (k a)) ≡⟨ retract (k a) ⟩
+      tabulate (index (k a)) ≡⟨ repRetract (k a) ⟩
       k a ∎ ;
     right-id = λ m → begin
       tabulate (λ a → index (tabulate (const (index m a))) a) ≡⟨ cong tabulate (right-lem m) ⟩
-      tabulate (index m) ≡⟨ retract m ⟩
+      tabulate (index m) ≡⟨ repRetract m ⟩
       m ∎ ;
     assoc = λ m k h → cong tabulate (f-ext (λ i → assoc-lem m k h i)) }
-
-  open IMonad monad public
-
