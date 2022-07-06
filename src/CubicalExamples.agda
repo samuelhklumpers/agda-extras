@@ -2,7 +2,7 @@
 
 module CubicalExamples where
 
-open import Cubical.Core.Everything
+open import Cubical.Core.Everything hiding (_≡_)
 
 open import Level
 open import Data.Nat renaming (suc to succ)

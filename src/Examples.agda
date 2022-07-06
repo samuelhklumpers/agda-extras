@@ -1,4 +1,4 @@
-{-# OPTIONS --guardedness --overlapping-instances #-}
+{-# OPTIONS --guardedness #-}
 
 
 module Examples where
@@ -43,6 +43,15 @@ module VecEx where
             section' : {A : Set ℓ} → (f : Fin n → A) → lookup (V.tabulate f) ≡ f
             section' f = f-ext (λ i → lookup∘tabulate f i)
 
+    VecMon :  ∀ {ℓ n} → IMonad {I = ⊤} (λ _ _ → Vec' {ℓ} n)
+    VecMon {_} {n} = repToMon (Vec' n)
+
+    VecApp :  ∀ {ℓ n} → IApplicative {I = ⊤} (λ _ _ → Vec' {ℓ} n)
+    VecApp {_} {n} = monToApp (λ _ _ → Vec' n)
+
+    VecFun :  ∀ {ℓ n} → Functor (Vec' {ℓ} n)
+    VecFun {_} {n} = appToFun (λ _ _ → Vec' n)
+
   ex1 : Vec ℕ 2
   ex1 = (_+ 1) <$> 0 ∷ 1 ∷ []
 
@@ -61,7 +70,6 @@ module FunAppEx where
     RawAppFun : RawIApplicative (FunF' B)
     RawAppFun = record { pure = λ x y → x ; _⊛_ = λ f g x → f x (g x) }
 
-  instance
     AppFun : IApplicative (FunF' B)
     AppFun = record {
       a-ident = λ v → f-ext λ x → refl ;
@@ -69,6 +77,8 @@ module FunAppEx where
       hom = λ f x → refl ;
       inter = λ u y → refl }
 
+    FunFun : {B : Set ℓ} → Functor (FunF B)
+    FunFun {_} {B} = appToFun (FunF' B)
 
   ex1 : {A B C : Set ℓ} → (B → C) → (A → B) → A → C
   ex1 g f = g <$> f

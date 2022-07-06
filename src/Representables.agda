@@ -1,3 +1,5 @@
+{-# OPTIONS --without-K #-}
+
 module Representables where
 
 open import Level
@@ -36,12 +38,6 @@ record Representable (F : Set ℓ → Set ℓ) : Set (suc ℓ ⊔ suc ℓ′) wh
   tabulate : (Rep → A) → F A
   tabulate {A} = _≅_.from (iso A)
 
-  instance
-    RepMon : RawIMonad {I = ⊤} (λ _ _ → F)
-    RepMon = record {
-      return = λ x   → tabulate (const x) ;
-      _>>=_  = λ m f → tabulate (λ a → index (f (index m a)) a) }
-
   repRetract : (k : F A) → tabulate (index k) ≡ k
   repRetract {A} = _≅_.retract (iso A)
   repSection : (f : Rep → A) → index (tabulate f) ≡ f
@@ -65,15 +61,20 @@ record Representable (F : Set ℓ → Set ℓ) : Set (suc ℓ ⊔ suc ℓ′) wh
   
 open Representable {{...}} public
 
-instance
-  monad : {F : Set ℓ → Set ℓ} → {{Representable {ℓ′ = ℓ′} F}} → IMonad {I = ⊤} (λ _ _ → F)
-  monad = record {
-    left-id = λ a k → begin
-      tabulate (λ j → index (k (index (tabulate (const a)) j)) j) ≡⟨ cong tabulate (left-lem a k) ⟩
-      tabulate (index (k a)) ≡⟨ repRetract (k a) ⟩
-      k a ∎ ;
-    right-id = λ m → begin
-      tabulate (λ a → index (tabulate (const (index m a))) a) ≡⟨ cong tabulate (right-lem m) ⟩
-      tabulate (index m) ≡⟨ repRetract m ⟩
-      m ∎ ;
-    assoc = λ m k h → cong tabulate (f-ext (λ i → assoc-lem m k h i)) }
+repToMon : (F : Set ℓ → Set ℓ) → {{Representable {ℓ′ = ℓ′} F}} → IMonad {I = ⊤} (λ _ _ → F)
+repToMon F = record {
+  left-id = λ a k → begin
+    tabulate (λ j → index (k (index (tabulate (const a)) j)) j) ≡⟨ cong tabulate (left-lem a k) ⟩
+    tabulate (index (k a)) ≡⟨ repRetract (k a) ⟩
+    k a ∎ ;
+  right-id = λ m → begin
+    tabulate (λ a → index (tabulate (const (index m a))) a) ≡⟨ cong tabulate (right-lem m) ⟩
+    tabulate (index m) ≡⟨ repRetract m ⟩
+    m ∎ ;
+  assoc = λ m k h → cong tabulate (f-ext (λ i → assoc-lem m k h i)) }
+    where
+      instance
+        repToMon' : RawIMonad {I = ⊤} (λ _ _ → F)
+        repToMon' = record {
+          return = λ x   → tabulate (const x) ;
+          _>>=_  = λ m f → tabulate (λ a → index (f (index m a)) a) }

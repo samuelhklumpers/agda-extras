@@ -1,3 +1,5 @@
+{-# OPTIONS --without-K #-}
+
 module Functors where
 
 open import Function.Base using (id; _∘′_)

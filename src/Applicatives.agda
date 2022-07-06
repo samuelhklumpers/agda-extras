@@ -1,3 +1,5 @@
+{-# OPTIONS --without-K #-}
+
 module Applicatives where
 
 open import Function.Base using (id; _$′_; _∘′_)
@@ -40,20 +42,23 @@ record IApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
     inter : ∀ {i j} → (u : F i j (A → B)) (y : A)
       → (u ⊛ pure y) ≡ (pure (_$′ y) ⊛ u)
 
-  instance
-    AppFunctor : {(i , j) : I × I} → RawFunctor (F i j)
-    AppFunctor = rawFunctor
+  {-instance
+    AppFunctor : {i j : I} → RawFunctor (F i j)
+    AppFunctor = rawFunctor-}
 
 open IApplicative {{...}} public
 
-instance 
-  functor : {I : Set i} {k l : I} {F : IFun I ℓ} → {{IApplicative F}} → Functor (F k l)
-  functor = record {
-    f-ident = a-ident ;
-    f-comp  = λ g f x → begin
-      (pure g ⊛ (pure f ⊛ x))               ≡⟨ sym (a-comp (pure g) (pure f) x) ⟩
-      (((pure _∘′_ ⊛ pure g) ⊛ pure f) ⊛ x) ≡⟨ cong (λ y → (y ⊛ pure f) ⊛ x) (hom _∘′_ g) ⟩
-      ((pure (g ∘′_) ⊛ pure f) ⊛ x)         ≡⟨ cong (_⊛ x) (hom (_∘′_ g) f) ⟩  
-      (pure (g ∘′ f) ⊛ x) ∎ }
+appToFun : {I : Set i} {k l : I} (F : IFun I ℓ) → {{IApplicative F}} → Functor (F k l)
+appToFun {_} {_} {_} {k} {l} F = record {
+  f-ident = a-ident ;
+  f-comp  = λ g f x → begin
+    (pure g ⊛ (pure f ⊛ x))               ≡⟨ sym (a-comp (pure g) (pure f) x) ⟩
+    (((pure _∘′_ ⊛ pure g) ⊛ pure f) ⊛ x) ≡⟨ cong (λ y → (y ⊛ pure f) ⊛ x) (hom _∘′_ g) ⟩
+    ((pure (g ∘′_) ⊛ pure f) ⊛ x)         ≡⟨ cong (_⊛ x) (hom (_∘′_ g) f) ⟩  
+    (pure (g ∘′ f) ⊛ x) ∎ }
+      where
+        instance
+          appToFun' : RawFunctor (F k l)
+          appToFun' = rawFunctor 
 
 
