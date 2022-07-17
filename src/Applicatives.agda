@@ -23,11 +23,11 @@ private
     A B C : Set ℓ
 
 
-record IApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
+record PreIApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
   field
-    {{App}} : RawIApplicative F
+    {{RawIApp}} : RawIApplicative F
   
-  open RawIApplicative App using (pure; _⊛_; rawFunctor) public
+  open RawIApplicative RawIApp using (pure; _⊛_; rawFunctor) public
 
   field
     a-ident : ∀ {i j} → (v : F i j A)
@@ -42,23 +42,32 @@ record IApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
     inter : ∀ {i j} → (u : F i j (A → B)) (y : A)
       → (u ⊛ pure y) ≡ (pure (_$′ y) ⊛ u)
 
-  {-instance
-    AppFunctor : {i j : I} → RawFunctor (F i j)
-    AppFunctor = rawFunctor-}
+open PreIApplicative {{...}} public
+
+record IApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
+  constructor iapp
+  field
+    {{PreIApp}}  : PreIApplicative F
+    {{AppFun}}   : {k l : I} → Functor (F k l)
+    compatAppFun : {k l : I} → (f : A → B) (x : F k l A) → (f <$> x) ≡ (pure f ⊛ x)  
 
 open IApplicative {{...}} public
 
-appToFun : {I : Set i} {k l : I} (F : IFun I ℓ) → {{IApplicative F}} → Functor (F k l)
-appToFun {_} {_} {_} {k} {l} F = record {
-  f-ident = a-ident ;
-  f-comp  = λ g f x → begin
-    (pure g ⊛ (pure f ⊛ x))               ≡⟨ sym (a-comp (pure g) (pure f) x) ⟩
-    (((pure _∘′_ ⊛ pure g) ⊛ pure f) ⊛ x) ≡⟨ cong (λ y → (y ⊛ pure f) ⊛ x) (hom _∘′_ g) ⟩
-    ((pure (g ∘′_) ⊛ pure f) ⊛ x)         ≡⟨ cong (_⊛ x) (hom (_∘′_ g) f) ⟩  
-    (pure (g ∘′ f) ⊛ x) ∎ }
-      where
-        instance
-          appToFun' : RawFunctor (F k l)
-          appToFun' = rawFunctor 
 
+module AppToFun {i ℓ} {I : Set i} (F : IFun I ℓ) where
+  instance
+    preAppToFun : {{PreIApplicative F}} → {k l : I} → Functor (F k l)
+    preAppToFun {k = k} {l = l} = record {
+      f-ident = a-ident ;
+      f-comp  = λ g f x → begin
+        (pure g ⊛ (pure f ⊛ x))               ≡⟨ sym (a-comp (pure g) (pure f) x) ⟩
+        (((pure _∘′_ ⊛ pure g) ⊛ pure f) ⊛ x) ≡⟨ cong (λ y → (y ⊛ pure f) ⊛ x) (hom _∘′_ g) ⟩
+        ((pure (g ∘′_) ⊛ pure f) ⊛ x)         ≡⟨ cong (_⊛ x) (hom (_∘′_ g) f) ⟩  
+        (pure (g ∘′ f) ⊛ x) ∎ }
+          where
+            instance
+              appToFun' : RawFunctor (F k l)
+              appToFun' = rawFunctor 
 
+    preAppToApp : {{PreIApplicative F}} → IApplicative F
+    preAppToApp = iapp λ f x → refl

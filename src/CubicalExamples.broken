@@ -2,11 +2,11 @@
 
 module CubicalExamples where
 
-open import Cubical.Core.Everything hiding (_≡_)
+open import Agda.Builtin.Cubical.Path
 
 open import Level
 open import Data.Nat renaming (suc to succ)
-open import Relation.Binary.PropositionalEquality
+--open import Relation.Binary.PropositionalEquality
 
 open import Extensionality
 open import Representables
@@ -27,6 +27,18 @@ module StreamEx where
       tl : Stream A
 
   open Stream
+
+  record _≈_ {ℓ} {A : Set ℓ} (x y : Stream {ℓ} A) : Set ℓ where
+    coinductive
+    field
+      hd-≈ : hd x ≡ hd y
+      tl-≈ : tl x ≈ tl y
+
+  open _≈_
+
+  bisim : {x y : Stream A} → x ≈ y → x ≡ y
+  hd (bisim p i) = hd-≈ p i
+  tl (bisim p i) = bisim (tl-≈ p) i
 
   ix : Stream A → ℕ → A
   ix s 0        = hd s

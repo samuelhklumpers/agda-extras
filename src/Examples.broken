@@ -57,28 +57,3 @@ module VecEx where
 
   test1 : ex1 ≡ 1 ∷ 2 ∷ []
   test1 = refl
-
-
-module FunAppEx where
-  FunF : Set ℓ → Set ℓ → Set ℓ
-  FunF a b = a → b
-
-  FunF' : Set ℓ → ⊤ → ⊤ → Set ℓ → Set ℓ
-  FunF' a _ _ = FunF a
-
-  instance
-    RawAppFun : RawIApplicative (FunF' B)
-    RawAppFun = record { pure = λ x y → x ; _⊛_ = λ f g x → f x (g x) }
-
-    AppFun : IApplicative (FunF' B)
-    AppFun = record {
-      a-ident = λ v → f-ext λ x → refl ;
-      a-comp = λ u v w → f-ext λ x → refl ;
-      hom = λ f x → refl ;
-      inter = λ u y → refl }
-
-    FunFun : {B : Set ℓ} → Functor (FunF B)
-    FunFun {_} {B} = appToFun (FunF' B)
-
-  ex1 : {A B C : Set ℓ} → (B → C) → (A → B) → A → C
-  ex1 g f = g <$> f
