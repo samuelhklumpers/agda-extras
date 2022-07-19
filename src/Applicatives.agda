@@ -4,7 +4,6 @@ module Applicatives where
 
 open import Function.Base using (id; _$′_; _∘′_)
 open import Effect.Functor using (RawFunctor)
-open import Effect.Applicative.Indexed using (RawIApplicative; IFun)
 open import Level using (Level; suc; _⊔_)
 open import Relation.Binary.PropositionalEquality
 open import Data.Product
@@ -19,15 +18,28 @@ open ≡-Reasoning
 
 private
   variable
-    ℓ i : Level
-    A B C : Set ℓ
+    i a b : Level
+    A B C : Set a
+
+HIFun : Set i → (a b : Level) → Set (i ⊔ suc a ⊔ suc b)
+HIFun I a b = I → I → Set a → Set b
 
 
-record PreIApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
+record RawIApplicative' {I : Set i} (F : HIFun I a b) : Set (i ⊔ suc a ⊔ b) where
+  infixl 4 _⊛_ 
   field
-    {{RawIApp}} : RawIApplicative F
-  
-  open RawIApplicative RawIApp using (pure; _⊛_; rawFunctor) public
+    pure : ∀ {i} → A → F i i A
+    _⊛_  : ∀ {i j k} → F i j (A → B) → F j k A → F i k B
+
+  rawFunctor : ∀ {i j} → RawFunctor (F i j)
+  rawFunctor = record { _<$>_ = λ g x → pure g ⊛ x }
+
+
+record PreIApplicative {I : Set i} (F : HIFun I a b) : Set (i ⊔ suc a ⊔ b) where
+  field
+    {{RawIApp}} : RawIApplicative' F
+
+  open RawIApplicative' RawIApp using (pure; _⊛_; rawFunctor) public
 
   field
     a-ident : ∀ {i j} → (v : F i j A)
@@ -42,9 +54,10 @@ record PreIApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
     inter : ∀ {i j} → (u : F i j (A → B)) (y : A)
       → (u ⊛ pure y) ≡ (pure (_$′ y) ⊛ u)
 
+
 open PreIApplicative {{...}} public
 
-record IApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
+record IApplicative {I : Set i} (F : HIFun I a b) : Set (i ⊔ suc a ⊔ b) where
   constructor iapp
   field
     {{PreIApp}}  : PreIApplicative F
@@ -54,7 +67,7 @@ record IApplicative {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
 open IApplicative {{...}} public
 
 
-module AppToFun {i ℓ} {I : Set i} (F : IFun I ℓ) where
+module AppToFun {i a b} {I : Set i} (F : HIFun I a b) where
   instance
     preAppToFun : {{PreIApplicative F}} → {k l : I} → Functor (F k l)
     preAppToFun {k = k} {l = l} = record {

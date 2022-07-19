@@ -4,27 +4,43 @@ module Monads where
 
 open import Function.Base using (id; _$′_; _∘′_)
 open import Effect.Functor using (RawFunctor)
-open import Effect.Applicative.Indexed using (RawIApplicative; IFun)
-open import Effect.Monad.Indexed using (RawIMonad)
 open import Level using (Level; suc; _⊔_)
 open import Relation.Binary.PropositionalEquality
 
 open import Extensionality
-open import Applicatives public
+open import Applicatives
+
 
 private
   variable
-    ℓ i : Level
-    A B C : Set ℓ
-
-open ≡-Reasoning
+    i a b : Level
+    A B C : Set a
 
 
-record PreIMonad {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
+record RawIMonad' {I : Set i} (M : HIFun I a b) : Set (i ⊔ suc a ⊔ b) where
+  infixl 1 _>>=_ _>>_
+
   field
-    {{Mon}} : RawIMonad F
+    return : ∀ {i} → A → M i i A
+    _>>=_  : ∀ {i j k} → M i j A → (A → M j k B) → M i k B
 
-  open RawIMonad Mon using (return; _>>=_; rawIApplicative) public
+  _>>_ : ∀ {i j k} → M i j A → M j k B → M i k B
+  m₁ >> m₂ = m₁ >>= λ _ → m₂
+
+  rawIApplicative : RawIApplicative' M
+  rawIApplicative = record {
+      pure = return ;
+      _⊛_  = λ f x → f >>= λ f′ → x >>= λ x′ → return (f′ x′)
+    }
+
+
+
+
+record PreIMonad {I : Set i} (F : HIFun I a b) : Set (i ⊔ suc a ⊔ b) where
+  field
+    {{Mon}} : RawIMonad' F
+
+  open RawIMonad' Mon using (return; _>>=_; rawIApplicative) public
 
   field
     left-id  : ∀ {i j} → (a : A) (f : A → F i j B)
@@ -36,7 +52,8 @@ record PreIMonad {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
 
 open PreIMonad {{...}} public
 
-record IMonad {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
+
+record IMonad {I : Set i} (F : HIFun I a b) : Set (i ⊔ suc a ⊔ b) where
   constructor imon
   field
     {{PreIMon}} : PreIMonad F
@@ -53,7 +70,9 @@ record IMonad {I : Set i} (F : IFun I ℓ) : Set (i ⊔ suc ℓ) where
     bindApply  : ∀ {i j k} → (f : F i j (A → B)) (x : F j k A) → (f >>= (λ f' → x >>= λ x' → return (f' x'))) ≡ (f ⊛ x)
 
 
-module MonToApp {i ℓ} {I : Set i} (F : IFun I ℓ) where
+open ≡-Reasoning
+
+module MonToApp {i a b} {I : Set i} (F : HIFun I a b) where
   instance
     monToApp : {{PreIMonad F}} → PreIApplicative F
     monToApp = record {
@@ -92,7 +111,7 @@ module MonToApp {i ℓ} {I : Set i} (F : IFun I ℓ) where
       }
           where
             instance
-              monToApp' : RawIApplicative F
+              monToApp' : RawIApplicative' F
               monToApp' = rawIApplicative
 
     preMonToMon : {{PreIMonad F}} → IMonad F

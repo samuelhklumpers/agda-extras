@@ -2,7 +2,6 @@ module AppToFunExample where
 
 open import Relation.Binary.PropositionalEquality
 open import Data.Unit
-open import Effect.Applicative.Indexed
 open import Effect.Functor
 open import Level
 
@@ -24,7 +23,7 @@ private
 →F' a _ _ = →F a
 
 instance
-  →RawApp : RawIApplicative (→F' B)
+  →RawApp : RawIApplicative' (→F' B)
   →RawApp = record { pure = λ x y → x ; _⊛_ = λ f g x → f x (g x) }
 
   →PreApp : PreIApplicative (→F' B)
