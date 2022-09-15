@@ -63,7 +63,7 @@ open ≡-Reasoning
 module MonToApp {i a b} {I : Set i} (F : HIFun I a b) where
   monToApp : IMonad F → IApplicative F
   monToApp M = record {
-      rawIA = record { pure = return ; _⊛_ = λ f x → f >>= λ f′ → x >>= λ x′ → return (f′ x′) } ;
+      rawIA = record { pure = return ; ap = λ f x → f >>= λ f′ → x >>= λ x′ → return (f′ x′) } ;
       a-ident = λ v → begin
         (return id >>= (λ f → v >>= λ x → return (f x))) ≡⟨ left-id M id ((λ f → v >>= λ x → return (f x))) ⟩
         (v >>= return) ≡⟨ right-id M v ⟩

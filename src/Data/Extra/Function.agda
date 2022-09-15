@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K #-}
 
-module Monads.Instances where
+module Data.Extra.Function where
 
 open import Relation.Binary.PropositionalEquality
 open import Data.Unit
@@ -19,7 +19,6 @@ private
     B : Set b
 
 -- the function (r →) monad
-
 FunctionRawM : RawIMonad {a = a} {I = ⊤} (λ _ _ B → (A → B))
 FunctionRawM = record { return = λ x _ → x ; _>>=_ = λ f g x → g (f x) x }
 

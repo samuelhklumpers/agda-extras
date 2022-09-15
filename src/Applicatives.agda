@@ -11,6 +11,7 @@ open import Data.Unit
 open import Level renaming (zero to lzero)
 
 open import Functors public
+open import Cong-Skeletons
 
 open ≡-Reasoning
 
@@ -28,13 +29,12 @@ record RawIApplicative {I : Set p} (F : HIFun I a b) : Set (p ⊔ suc a ⊔ b) w
   infixl 4 _⊛_ 
   field
     pure : ∀ {i} → A → F i i A
-    _⊛_  : ∀ {i j k} → F i j (A → B) → F j k A → F i k B
+    ap : ∀ {i j k} → F i j (A → B) → F j k A → F i k B
 
---open RawIApplicative public
+  _⊛_ : ∀ {i j k} → F i j (A → B) → F j k A → F i k B
+  _⊛_ = ap
 
-ap : {A B : Set a} {I : Set p} {i j k : I} {F : HIFun I a b} → RawIApplicative F
-   → F i j (A → B) → F j k A → F i k B
-ap F = F .RawIApplicative._⊛_
+open RawIApplicative public
 
 RawApplicative : (Set a → Set b) → Set (suc a ⊔ b)
 RawApplicative F = RawIApplicative {I = ⊤} (λ _ _ → F)
@@ -45,20 +45,20 @@ record IApplicative {I : Set p} (F : HIFun I a b) : Set (p ⊔ suc a ⊔ b) wher
     rawIA : RawIApplicative F
 
   private
-    open module X = RawIApplicative rawIA
+    open module X = RawIApplicative rawIA renaming (pure to pureF; _⊛_ to _⊛F_)
 
   field
     a-ident : ∀ {i j} → (v : F i j A)
-      → ((pure id) ⊛ v) ≡ v
+      → ((pureF id) ⊛F v) ≡ v
       
     a-comp  : ∀ {i j k l} → (u : F i j (B → C)) (v : F j k (A → B)) (w : F k l A)
-      → (((pure _∘′_ ⊛ u) ⊛ v) ⊛ w) ≡ (u ⊛ (v ⊛ w))
+      → (((pureF _∘′_ ⊛F u) ⊛F v) ⊛F w) ≡ (u ⊛F (v ⊛F w))
       
     hom   : ∀ {i} → (f : A → B) (x : A)
-      → (pure {i = i} f ⊛ pure x) ≡ pure (f x)
+      → (pureF {i = i} f ⊛F pureF x) ≡ pureF (f x)
       
     inter : ∀ {i j} → (u : F i j (A → B)) (y : A)
-      → (u ⊛ pure y) ≡ (pure (_$′ y) ⊛ u)
+      → (u ⊛F pureF y) ≡ (pureF (_$′ y) ⊛F u)
 
 
 open IApplicative public
@@ -67,15 +67,22 @@ Applicative : (Set a → Set b) → Set (suc a ⊔ b)
 Applicative F = IApplicative {I = ⊤} (λ _ _ → F)
 
 
-module AppToFun {p a b} {I : Set p} (F : HIFun I a b) where
-  preAppToFun : IApplicative F → {k l : I} → Functor (F k l)
-  preAppToFun A {k = k} {l = l} = record {
-    rawF = record { _<$>_ = λ f x → pure f ⊛ x } ;
+module AppToFun {p a b} {I : Set p} {F : HIFun I a b} where
+  rawATF : RawIApplicative F → {k l : I} → RawFunctor (F k l)
+  rawATF A = record { _<$>_ = λ f x → pureF f ⊛F x }
+    where
+      open RawIApplicative A renaming (pure to pureF; _⊛_ to _⊛F_)
+
+  appToFun : IApplicative F → {k l : I} → Functor (F k l)
+  appToFun A = record {
+    rawF = rawATF (A .rawIA) ;
     f-ident = a-ident A ;
     f-comp =  λ g f x → begin
-      (pure g ⊛ (pure f ⊛ x))               ≡⟨ sym (a-comp A (pure g) (pure f) x) ⟩
-      (((pure _∘′_ ⊛ pure g) ⊛ pure f) ⊛ x) ≡⟨ cong (λ y → (y ⊛ pure f) ⊛ x) (hom A _∘′_ g) ⟩
-      ((pure (g ∘′_) ⊛ pure f) ⊛ x)         ≡⟨ cong (_⊛ x) (hom A (_∘′_ g) f) ⟩  
-      (pure (g ∘′ f) ⊛ x) ∎ }
+      (pureF g ⊛F (pureF f ⊛F x)) ≡⟨ sym (a-comp A (pureF g) (pureF f) x) ⟩
+      _⊛F_ ≡[ _⊛F_ ≡[ hom A _∘′_ g ] (pureF f) ] x ⟩
+      _⊛F_ ≡[ hom A (_∘′_ g) f ] x ⟩
+      pureF (g ∘′ f) ⊛F x ∎ }
       where
-        open module X = RawIApplicative (A .rawIA)
+        open RawIApplicative (A .rawIA) renaming (pure to pureF; _⊛_ to _⊛F_)
+
+open AppToFun public
