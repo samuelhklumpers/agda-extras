@@ -14,25 +14,46 @@ open import Monads
 
 private
   variable
-    a b : Level
+    a b c : Level
     A : Set a
     B : Set b
 
 -- the function (r →) monad
 
-FunctionF : Set a → Set b → Set (a ⊔ b)
-FunctionF a b = a → b
+FunctionRawM : RawIMonad {a = a} {I = ⊤} (λ _ _ B → (A → B))
+FunctionRawM = record { return = λ x _ → x ; _>>=_ = λ f g x → g (f x) x }
 
-FunctionF' : Set a → ⊤ → ⊤ → Set b → Set (a ⊔ b)
-FunctionF' a _ _ = FunctionF a
+FunctionM : Monad {a = a} (λ B → (A → B))
+FunctionM = record {
+  rawM = FunctionRawM ;
+  left-id = λ a f → f-ext (λ x → refl) ;
+  right-id = λ m → f-ext (λ x → refl) ;
+  assoc = λ m f g → f-ext (λ x → refl) }
+
+--FunctionA {a} {A : Set a} = MonToApp {a = a} (FunctionF' A) public
+--FunctionF {a} {A : Set a} = AppToFun {a = a} (FunctionF' A) public
 
 
-instance
-  FunctionRawM : RawIMonad' {a = a} (FunctionF' A)
-  FunctionRawM = record { return = λ x _ → x ; _>>=_ = λ f g x → g (f x) x }
 
-  FunctionPreMon : PreIMonad {a = a} (FunctionF' A)
-  FunctionPreMon = record { left-id = λ a f → f-ext (λ x → refl) ; right-id = λ m → f-ext (λ x → refl) ; assoc = λ m f g → f-ext (λ x → refl) }
+-- the identity monad
 
-open module MTA {a} {A : Set a} = MonToApp {a = a} (FunctionF' A)
-open module ATF {a} {A : Set a} = AppToFun {a = a} (FunctionF' A)
+
+record Identity (A : Set a) : Set a where
+  constructor identity
+  field
+    runIdentity : A
+
+open Identity public
+
+IdRawM : RawMonad {a = a} Identity
+IdRawM = record { return = identity ; _>>=_ = λ x f → f (runIdentity x) }
+
+IdM : Monad {a = a} Identity
+IdM = record {
+  rawM = IdRawM ;
+  left-id = λ _ _ → refl ;
+  right-id = λ { (identity x) → refl } ;
+  assoc = λ _ _ _ → refl }
+
+--open module IdMTA {a} = MonToApp {a = a} {I = ⊤} (λ _ _ → Identity) public renaming (preMonToMon to idMon; monToApp to idPreApp)
+--open module IdATF {a} = AppToFun {a = a} {I = ⊤} (λ _ _ → Identity) public renaming (preAppToApp to idApp; preAppToFun to idFun)

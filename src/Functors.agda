@@ -1,29 +1,33 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --without-K --safe #-}
 
 module Functors where
 
 open import Function.Base using (id; _∘′_)
-open import Effect.Functor using (RawFunctor)
+open import Effect.Functor using (RawFunctor) public
 open import Level using (Level; suc; _⊔_)
 open import Relation.Binary.PropositionalEquality using (_≡_)
 
 
 private
   variable
-    ℓ ℓ′ : Level
-    A B C : Set ℓ
+    a b : Level
+    A B C : Set a
 
-record Functor (F : Set ℓ → Set ℓ′) : Set (suc ℓ ⊔ ℓ′) where
+--open RawFunctor public
+
+fmap : ∀ {A B : Set a} {F : Set a → Set b} → RawFunctor F → (A → B) → F A → F B
+fmap F = F .RawFunctor._<$>_
+
+record Functor (F : Set a → Set b) : Set (suc a ⊔ b) where
   field 
-    {{Func}} : RawFunctor F
-    
-  open RawFunctor Func public
+    rawF : RawFunctor F
+
+  private
+    open module X = RawFunctor rawF
 
   field
     f-ident : (x : F A) → (id <$> x) ≡ x
     f-comp  : (g : B → C) (f : A → B) (x : F A)
-          → (g <$> (f <$> x)) ≡ (g ∘′ f <$> x)
+          → (g <$> (f <$> x)) ≡ ((g ∘′ f) <$> x)
 
-open Functor {{...}} public
-
-
+open Functor public
