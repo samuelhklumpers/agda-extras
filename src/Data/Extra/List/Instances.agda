@@ -3,6 +3,7 @@ module Data.Extra.List.Instances where
 open import Data.List
 open import Relation.Binary.PropositionalEquality
 open import Function.Base
+open import Data.Product
 
 open ≡-Reasoning
 
@@ -55,7 +56,7 @@ ListTr = record {
         compose (pure (F .rawIA) (pure (G .rawIA) [])) ≡⟨⟩
         compose ≡[ sym (hom F (traverse ListRawTr (G .rawIA) g) []) ⟩
         compose (fmap (rawATF (F .rawIA)) (traverse ListRawTr (G .rawIA) g) (traverse ListRawTr (F .rawIA) f [])) ∎
-      comp {B = B} {A = A} {F' = F'} G F g f (x ∷ xs) = cong compose (begin 
+      comp {B = B} {C = C} {A = A} {G' = G'} {F' = F'} G F g f (x ∷ xs) = cong compose (begin 
         apF (apF (pureF apG) (apF (apF (pureF apG) (pureF (pureG _∷_))) (apF (pureF g) (f x)))) (runCompose (trav CA (λ y → compose (apF (pureF g) (f y))) xs)) ≡⟨⟩
         apF (apF (pureF apG) (apF (apF (pureF apG) (pureF (pureG _∷_))) (apF (pureF g) (f x)))) ≡[ runCompose ≡[ comp G F g f xs > ⟩
         apF ≡[ apF (pureF apG) ≡[ apF ≡[ hom F apG (pureG _∷_) ] (apF (pureF g) (f x)) > ] (apF (pureF (trav GA g)) (trav FA f xs)) ⟩
@@ -82,11 +83,6 @@ ListTr = record {
         apF (apF (apF (pureF _∘′_) (pureF (trav GA g))) (apF (pureF _∷_) (f x))) (trav FA f xs) ≡⟨ a-comp F _ _ _ ⟩
         apF (pureF (trav GA g)) (apF (apF (pureF _∷_) (f x)) (trav FA f xs)) ∎)
           where
-            comp-hom : ∀ {a b p} {I : Set p} {H' : HIFun I a b} {i j : I} {A B C : Set a} → (H : IApplicative H') → (u : B → A) (v : C → B) (w : H' i j C)
-                     → ap (H .rawIA) (pure (H .rawIA) u) (ap (H .rawIA) (pure (H .rawIA) v) w) ≡ ap (H .rawIA) (pure (H .rawIA) (u ∘′ v)) w
-            comp-hom H u v w = trans (sym (a-comp H _ _ _)) (trans (cong (λ s → ap (H .rawIA) (ap (H .rawIA) s (pure (H .rawIA) v)) w) (hom H _ _)) (cong (λ s → ap (H .rawIA) s w) (hom H _ _)))
-
-
             FA = F .rawIA
             GA = G .rawIA
             CA = CompRawA FA GA
@@ -98,6 +94,7 @@ ListTr = record {
             open RawFunctor (rawATF GA) renaming (_<$>_ to mapG)
             open RawFunctor (rawATF CA) renaming (_<$>_ to mapC)
 
+            open import AppSolver
             
             lemma : (x : A) (xs : List A) →
                     ap FA 
@@ -131,4 +128,16 @@ ListTr = record {
               apF ≡[ pureF ≡[ f-ext (λ x → refl) > ] _ ⟩
               _ ∎
               )
-            lemma x (y ∷ xs) = {!!} -- yeah just writing the applicative simplifier is easier...
+            lemma x (y ∷ xs) = begin
+              LHS ≡⟨ proj₂ (simplify F LHS') ⟩
+              runFreeAL FA (proj₁ (simplify F LHS')) ≡⟨ refl ⟩
+              runFreeAL FA (proj₁ (simplify F RHS')) ≡˘⟨ proj₂ (simplify F RHS') ⟩
+              RHS ∎
+                where
+                  LHS = apF (apF (apF (apF (pureF _∘′_) (pureF (_$′ traverse ListRawTr GA g))) (pureF ((_∘′_ ∘′ apG ∘′ apG (pureG _∷_)) ∘′ g))) (f x)) (apF (apF (pureF _∷_) (f y)) (trav FA f xs))
+                  LHS' : AppRep F' (G' (List C))
+                  LHS' = apR (apR (apR (apR (Pure _∘′_) (Pure (_$′ traverse ListRawTr GA g))) (Pure ((_∘′_ ∘′ apG ∘′ apG (pureG _∷_)) ∘′ g))) (Raw (f x))) (apR (apR (Pure _∷_) (Raw (f y))) (Raw (trav FA f xs)))
+
+                  RHS = apF (apF (apF (pureF (_$′ traverse ListRawTr GA g)) (pureF _∘′_)) (apF (pureF _∷_) (f x))) (apF (apF (pureF _∷_) (f y)) (trav FA f xs))
+                  RHS' : AppRep F' (G' (List C))
+                  RHS' = apR (apR (apR (Pure (_$′ traverse ListRawTr GA g)) (Pure _∘′_)) (apR (Pure _∷_) (Raw (f x)))) (apR (apR (Pure _∷_) (Raw (f y))) (Raw (trav FA f xs)))

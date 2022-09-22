@@ -1,4 +1,4 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --without-K --safe #-}
 
 module Data.Extra.Identity where
 
@@ -10,7 +10,6 @@ open import Effect.Monad
 
 open import Functors
 open import Applicatives
-open import Extensionality
 
 open ≡-Reasoning
 

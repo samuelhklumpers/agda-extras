@@ -86,3 +86,8 @@ module AppToFun {p a b} {I : Set p} {F : HIFun I a b} where
         open RawIApplicative (A .rawIA) renaming (pure to pureF; _⊛_ to _⊛F_)
 
 open AppToFun public
+
+
+comp-hom : ∀ {a b p} {I : Set p} {H' : HIFun I a b} {i j : I} {A B C : Set a} → (H : IApplicative H') → (u : B → A) (v : C → B) (w : H' i j C)
+         → ap (H .rawIA) (pure (H .rawIA) u) (ap (H .rawIA) (pure (H .rawIA) v) w) ≡ ap (H .rawIA) (pure (H .rawIA) (u ∘′ v)) w
+comp-hom H u v w = trans (sym (a-comp H _ _ _)) (trans (cong (λ s → ap (H .rawIA) (ap (H .rawIA) s (pure (H .rawIA) v)) w) (hom H _ _)) (cong (λ s → ap (H .rawIA) s w) (hom H _ _)))
