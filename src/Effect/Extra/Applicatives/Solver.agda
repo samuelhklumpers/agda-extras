@@ -1,33 +1,82 @@
 {-# OPTIONS --safe #-}
 
-module AppSolver where
+module Effect.Extra.Applicatives.Solver where
 
-open import Level renaming (zero to lzero; suc to lsuc)
-open import Function.Base using (_$′_; _∘′_; id; _on_)
 open import Data.Nat renaming (_⊔_ to _⊔ⁿ_)
 open import Data.Product hiding (zip)
 open import Data.Product.Relation.Binary.Lex.Strict
-open import Induction.Lexicographic
-open import Data.Sum
-open import Induction
-open import Induction.WellFounded as WF
-open import Relation.Binary.PropositionalEquality renaming ([_] to [≡_]) hiding (inspect)
+open import Data.Sum hiding (reduce)
 open import Data.Nat.Induction as N
 open import Data.Nat.Properties
-open import Data.Empty.Polymorphic
-open import Relation.Binary.Construct.On
-open import Data.Unit.Polymorphic
-open import Cong-Skeletons
+open import Function.Base using (_$′_; _∘′_; id; _on_)
+open import Induction.Lexicographic
+open import Induction
+open import Induction.WellFounded as WF
+open import Level renaming (zero to lzero; suc to lsuc)
 open import Relation.Binary
+open import Relation.Binary.Construct.On
 open import Relation.Binary.Indexed.Homogeneous hiding (Transitive)
-open import Relation.Unary.Indexed
-open import Relation.Nullary
+open import Relation.Binary.PropositionalEquality hiding (inspect; [_])
 open import Relation.Binary.PropositionalEquality.Properties using () renaming (isEquivalence to isEquivalence-≡)
+open import Relation.Nullary
+open import Relation.Unary.Indexed
 
 
-open import Applicatives
+open import Effect.Extra.Applicatives
+open import Misc.Cong-Reasoning
 
 open ≡-Reasoning
+
+open import Reflection
+open import Reflection.AST.Argument
+open import Reflection.AST.Term as Term
+open import Reflection.AST.AlphaEquality
+open import Reflection.AST.Name as Name
+open import Reflection.TCM.Syntax renaming (pure to pureT)
+open import Data.Nat.Reflection
+open import Data.List.Reflection
+import Data.Vec.Reflection as Vec
+open import Data.Unit.Base using (⊤)
+open import Data.Vec.Base   as Vec     using (Vec; _∷_; [])
+open import Data.Maybe.Base as Maybe   using (Maybe; just; nothing; fromMaybe)
+open import Data.List.Base  as List    using (List; _∷_; [])
+
+
+private
+  VarMap : Set
+  VarMap = ℕ → Maybe Term
+
+  getVisible : Arg Term → Maybe Term
+  getVisible (arg (arg-info visible _) x) = just x
+  getVisible _                            = nothing
+
+  getVisibleArgs : ∀ n → Term → Maybe (Vec Term n)
+  getVisibleArgs n (def _ xs) = Maybe.map Vec.reverse
+    (List.foldl f c (List.mapMaybe getVisible xs) n)
+    where
+    f : (∀ n → Maybe (Vec Term n)) → Term → ∀ n → Maybe (Vec Term n)
+    f xs x zero    = just []
+    f xs x (suc n) = Maybe.map (x ∷_) (xs n)
+
+    c : ∀ n → Maybe (Vec Term n)
+    c zero     = just []
+    c (suc _ ) = nothing
+  getVisibleArgs _ _ = nothing
+
+  malformedGoalError : ∀ {a} {A : Set a} → Term → TC A
+  malformedGoalError found = typeError
+    ( strErr "Malformed call to solve."
+    ∷ strErr "Goal type should be of the form: LHS ≈ RHS"
+    ∷ strErr "Instead: "
+    ∷ termErr found
+    ∷ [])
+
+  {-
+  curriedTerm : NatSet → Term
+  curriedTerm = List.foldr go Vec.`[] ∘ NatSet.toList
+    where
+    go : ℕ → Term → Term
+    go x xs = var x [] Vec.`∷ xs-}
 
 
 private
@@ -35,27 +84,27 @@ private
     a b : Level
 
 --* Intermediate datastructures
-data AppRep {a} (F : Set a → Set a) (A : Set a) : Set (lsuc a) where
+data AppRep (F : Set a → Set a) (A : Set a) : Set (lsuc a) where
   Pure : A → AppRep F A
   Raw  : F A → AppRep F A
   _◯_  : {B : Set a} → AppRep F (B → A) → AppRep F B → AppRep F A
 
-apR : ∀ {a} {F : Set a → Set a} {A B : Set a} → AppRep F (B → A) → AppRep F B → AppRep F A
+apR : ∀ {A B} {F : Set a → Set a} → AppRep F (B → A) → AppRep F B → AppRep F A
 apR = _◯_
 
-data FreeAL {a} (F : Set a → Set a) (A : Set a) : Set (lsuc a) where
+data FreeAL (F : Set a → Set a) (A : Set a) : Set (lsuc a) where
   PureL : A → FreeAL F A
   _:*:_ : {B : Set a} → FreeAL F (B → A) → F B → FreeAL F A
 
 
-data Zip {a} (F : Set a → Set a) (A : Set a) : Set (lsuc a)
-data Tail {a} (F : Set a → Set a) (A : Set a) : Set a → Set (lsuc a)  
+data Zip (F : Set a → Set a) (A : Set a) : Set (lsuc a)
+data Tail (F : Set a → Set a) (A : Set a) : Set a → Set (lsuc a)  
 
-data Tail {a} F A where
+data Tail {a = a} F A where
   none : Tail F A A
   tail : {C B : Set a} → F B → Tail F A (B → C) → Tail F A C
 
-data Zip {a} F A where
+data Zip {a = a} F A where
   unZip : {C B : Set a} → Zip F (C → B) → FreeAL F C → Tail F B A → Zip F A
   done  : FreeAL F A → Zip F A
 
@@ -65,7 +114,7 @@ unTail (tail x t) u = unTail t u :*: x
 
 
 --* Conversion from intermediate structure to terms
-module _ {a : Level} {F : Set a → Set a} (F' : RawApplicative F) where
+module _ {F : Set a → Set a} (F' : RawApplicative F) where
   private
     open module X = RawIApplicative F' renaming (pure to pureF; ap to apF)
     
@@ -125,7 +174,6 @@ ion-trans t = t
 0,n<n,sm (suc n) m = inj₁ (s≤s z≤n)
 
 _<<_ = ×-Lex _≡_ _<_ _<_
-
 
 open import Relation.Binary.Reasoning.Preorder ≤-preorder renaming (begin_ to ≤-begin_; _∎ to _≤-∎) hiding (step-≡; step-≡˘)
 
@@ -326,8 +374,20 @@ module _ {a : Level} {F : Set a → Set a} (F'' : Applicative F) where
   ... | (w , p) | (x , q) with zip w x
   ... | (y , r) = y , trans (cong₂ apF p q) (sym r)
 
+  {-
+  simplify-solution : Term → Term → TC Term
+  simplify-solution `app `lhs = {!!}
 
--- todo put simplify in a macro
+  simplify-macro : Name → Term → TC ⊤
+  simplify-macro applicative hole = do
+    hole′ ← inferType hole >>= reduce
+    just (lhs ∷ rhs ∷ []) ← pureT (getVisibleArgs 2 hole′)
+      where nothing → malformedGoalError hole′
+    {!!}
+  -}
+
+
+open import Data.List
 
 {-
 --* Temporary tests

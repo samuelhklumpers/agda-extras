@@ -6,8 +6,8 @@ open import Effect.Functor
 open import Level
 
 open import Extensionality
-open import Functors
-open import Applicatives
+open import Effect.Extra.Functors
+open import Effect.Extra.Applicatives
 
 
 private

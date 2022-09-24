@@ -13,13 +13,13 @@ open import Data.Fin using (Fin)
 open import Data.Unit
 open import Function.Base using (_∘′_)
 
-open import Functors
-open import Functors.Instances
-open import Applicatives
-open import Monads
-open import Monads.Instances
+open import Effect.Extra.Functors
+open import Effect.Extra.Functors.Instances
+open import Effect.Extra.Applicatives
+open import Effect.Extra.Monads
+open import Effect.Extra.Monads.Instances
 open import Representables
-open import Traversables
+open import Effect.Extra.Traversables
 open import Extensionality
 
 
@@ -71,8 +71,8 @@ module ListEx where
       t-ident = t-ident' ;
       t-comp = t-comp' }
       where
-        t-nat' : ∀ {a b} {A B : Set a} (t : AppTrans') {F G : Set a → Set b} (f : A → F B) →
-                    {{_ : Applicative F}} → {{_ : Applicative G}} → AppTrans'' {a = a} {b = b} t →
+        t-nat' : ∀ {a b} {A B : Set a} (t : RawAppTrans) {F G : Set a → Set b} (f : A → F B) →
+                    {{_ : Applicative F}} → {{_ : Applicative G}} → RawAppTrans' {a = a} {b = b} t →
                     (x : List A) → t {F = F} {G = G} (traverse f x) ≡ traverse (t {F = F} {G = G} ∘′ f) x
         t-nat' t f p [] = t-pure p []
         t-nat' t f p (x ∷ xs) = trans

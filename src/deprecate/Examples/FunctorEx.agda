@@ -6,7 +6,7 @@ open import Data.Nat hiding (_⊔_; suc)
 open import Data.Bool
 open import Level renaming (zero to lzero)
 
-open import Functors
+open import Effect.Extra.Functors
 
 private
   variable

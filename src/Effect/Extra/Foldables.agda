@@ -1,10 +1,10 @@
 {-# OPTIONS --without-K --safe #-}
 
-module Foldables where
+module Effect.Extra.Foldables where
 
 open import Level
 
-open import Monoids
+open import Structures.Monoids
 
 private
   variable

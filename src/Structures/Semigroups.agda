@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K --safe #-}
 
-module Semigroups where
+module Structures.Semigroups where
 
 open import Level
 open import Relation.Binary.PropositionalEquality using (_≡_)
@@ -14,8 +14,6 @@ record RawSemigroup (G : Set a) : Set a where
   
   field
     _<>_ : G → G → G
-
---open RawSemigroup public
 
 mappend : {G : Set a} → RawSemigroup G → G → G → G
 mappend G = G .RawSemigroup._<>_

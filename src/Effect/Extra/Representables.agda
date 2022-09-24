@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K #-}
 
-module Representables where
+module Effect.Extra.Representables where
 
 open import Level
 open import Relation.Binary.PropositionalEquality
@@ -9,9 +9,9 @@ open import Function.Inverse hiding (sym)
 open import Function.Equality hiding (const; cong)
 open import Data.Unit
 
+open import Data.Extra.Function.Instances
 open import Extensionality
-open import Monads
-open import Monads.Instances
+open import Effect.Extra.Monads
 
 open ≡-Reasoning
 open Inverse

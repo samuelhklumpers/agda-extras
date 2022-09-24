@@ -8,8 +8,8 @@ open import Relation.Binary.PropositionalEquality
 open import Effect.Functor
 open import Effect.Monad
 
-open import Functors
-open import Applicatives
+open import Effect.Extra.Functors
+open import Effect.Extra.Applicatives
 open import Extensionality
 
 open ≡-Reasoning

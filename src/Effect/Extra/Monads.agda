@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K #-}
 
-module Monads where
+module Effect.Extra.Monads where
 
 open import Function.Base using (id; _$′_; _∘′_)
 open import Effect.Functor using (RawFunctor)
@@ -9,7 +9,7 @@ open import Relation.Binary.PropositionalEquality
 open import Data.Unit
 
 open import Extensionality
-open import Applicatives
+open import Effect.Extra.Applicatives
 
 
 private
@@ -28,7 +28,6 @@ record RawIMonad {I : Set p} (M : HIFun I a b) : Set (p ⊔ suc a ⊔ b) where
   _>>_ : ∀ {i j k} → M i j A → M j k B → M i k B
   m₁ >> m₂ = m₁ >>= λ _ → m₂
 
---open RawIMonad public
 
 bind : {I : Set p} {i j k : I} {M : HIFun I a b} → RawIMonad M → M i j A → (A → M j k B) → M i k B
 bind M = M .RawIMonad._>>=_
@@ -68,6 +67,7 @@ module MonToApp {i a b} {I : Set i} (F : HIFun I a b) where
         (return id >>= (λ f → v >>= λ x → return (f x))) ≡⟨ left-id M id ((λ f → v >>= λ x → return (f x))) ⟩
         (v >>= return) ≡⟨ right-id M v ⟩
         v ∎ ;
+      -- TODO Cong-Reasoning
       a-comp  = λ u v w → begin
         ((((return _∘′_ >>= (λ c → u >>= (λ g → return (c g)))) >>= (λ g' → v >>= (λ f → return (g' f)))) >>= (λ f' → w >>= (λ x → return (f' x)))))
             ≡⟨ cong (λ k → (k >>= (λ g' → v >>= (λ f → return (g' f)))) >>= (λ f' → w >>= (λ x → return (f' x)))) (left-id M _∘′_ λ c → u >>= (λ g → return (c g))) ⟩

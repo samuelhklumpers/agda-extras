@@ -1,11 +1,11 @@
 {-# OPTIONS --without-K --safe #-}
 
-module Monoids where
+module Structures.Monoids where
 
 open import Level
 open import Relation.Binary.PropositionalEquality using (_≡_)
 
-open import Semigroups public
+open import Structures.Semigroups public
 
 private
   variable
@@ -15,8 +15,6 @@ record RawMonoid (M : Set a) : Set a where
   field
     rawMS : RawSemigroup M
     mempty : M
-
---open RawMonoid public
 
 record Monoid (M : Set a) : Set a where
   field

@@ -6,10 +6,10 @@ open import Level
 open import Function.Base using (id)
 
 open import Extensionality
-open import Functors
-open import Applicatives
-open import Monads
-open import Functors.Instances
+open import Effect.Extra.Functors
+open import Effect.Extra.Applicatives
+open import Effect.Extra.Monads
+open import Effect.Extra.Functors.Instances
 
 
 private

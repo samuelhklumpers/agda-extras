@@ -1,19 +1,27 @@
 module Data.Extra.List.Instances where
 
+open import Level
 open import Data.List
-open import Relation.Binary.PropositionalEquality
-open import Function.Base
 open import Data.Product
+open import Function.Base
+open import Relation.Binary.PropositionalEquality
 
 open ≡-Reasoning
 
-open import Data.Extra.Identity
 open import Data.Extra.Compose
 open import Data.Extra.Compose.Instances
-open import Applicatives
-open import Traversables
-open import Cong-Skeletons
+open import Data.Extra.Identity
+open import Data.Extra.Identity.Instances
+open import Effect.Extra.Applicatives
+open import Effect.Extra.Applicatives.Solver
+open import Effect.Extra.Traversables
 open import Extensionality
+open import Misc.Cong-Reasoning
+
+
+private
+  variable 
+    a b : Level
 
 
 ListRawTr : ∀ {a b} → RawTraversable {a} {b} List
@@ -29,7 +37,7 @@ ListTr = record {
 
   t-comp = comp }
     where
-      nat : ∀ {a} {b} {A B : Set a} {F' G' : Set a → Set b} (t : AppTrans' F' G') (f : A → F' B)
+      nat : ∀ {a} {b} {A B : Set a} {F' G' : Set a → Set b} (t : RawAppTrans F' G') (f : A → F' B)
             (F : Applicative F') (G : Applicative G') → AppTrans t → (x : List A) →
             t F G (traverse ListRawTr (F .rawIA) f x) ≡ traverse ListRawTr (G .rawIA) (t F G ∘′ f) x
       nat t f F G T [] = t-pure T F G []
@@ -49,6 +57,8 @@ ListTr = record {
         identity ≡[ _∷_ x ≡[ runIdentity ≡[ ident xs > > ⟩
         identity (x ∷ xs) ∎
 
+      -- TODO: cleanup when the applicative solver has a macro
+      
       comp : ∀ {a} {B C A : Set a} {G' F' : Set a → Set a} (G : Applicative G') (F : Applicative F') (g : B → G' C) (f : A → F' B) (xs : List A) →
              traverse ListRawTr (CompRawA (F .rawIA) (G .rawIA)) (compose ∘′ fmap (rawATF (F .rawIA)) g ∘′ f) xs
              ≡ compose (fmap (rawATF (F .rawIA)) (traverse ListRawTr (G .rawIA) g) (traverse ListRawTr (F .rawIA) f xs))
@@ -94,7 +104,6 @@ ListTr = record {
             open RawFunctor (rawATF GA) renaming (_<$>_ to mapG)
             open RawFunctor (rawATF CA) renaming (_<$>_ to mapC)
 
-            open import AppSolver
             
             lemma : (x : A) (xs : List A) →
                     ap FA 
@@ -141,3 +150,6 @@ ListTr = record {
                   RHS = apF (apF (apF (pureF (_$′ traverse ListRawTr GA g)) (pureF _∘′_)) (apF (pureF _∷_) (f x))) (apF (apF (pureF _∷_) (f y)) (trav FA f xs))
                   RHS' : AppRep F' (G' (List C))
                   RHS' = apR (apR (apR (Pure (_$′ traverse ListRawTr GA g)) (Pure _∘′_)) (apR (Pure _∷_) (Raw (f x)))) (apR (apR (Pure _∷_) (Raw (f y))) (Raw (trav FA f xs)))
+
+
+

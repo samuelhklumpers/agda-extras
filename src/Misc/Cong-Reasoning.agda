@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K --safe #-}
 
-module Cong-Skeletons where
+module Misc.Cong-Reasoning where
 
 open import Level
 open import Relation.Binary.PropositionalEquality

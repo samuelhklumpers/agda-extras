@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K --safe #-}
 
-module Applicatives where
+module Effect.Extra.Applicatives where
 
 open import Function.Base using (id; _$′_; _∘′_)
 open import Effect.Functor using (RawFunctor)
@@ -10,15 +10,15 @@ open import Data.Product
 open import Data.Unit
 open import Level renaming (zero to lzero)
 
-open import Functors public
-open import Cong-Skeletons
+open import Effect.Extra.Functors public
+open import Misc.Cong-Reasoning
 
 open ≡-Reasoning
 
 
 private
   variable
-    p a b : Level
+    p a b c : Level
     A B C : Set a
 
 HIFun : Set p → (a b : Level) → Set (p ⊔ suc a ⊔ suc b)
@@ -91,3 +91,16 @@ open AppToFun public
 comp-hom : ∀ {a b p} {I : Set p} {H' : HIFun I a b} {i j : I} {A B C : Set a} → (H : IApplicative H') → (u : B → A) (v : C → B) (w : H' i j C)
          → ap (H .rawIA) (pure (H .rawIA) u) (ap (H .rawIA) (pure (H .rawIA) v) w) ≡ ap (H .rawIA) (pure (H .rawIA) (u ∘′ v)) w
 comp-hom H u v w = trans (sym (a-comp H _ _ _)) (trans (cong (λ s → ap (H .rawIA) (ap (H .rawIA) s (pure (H .rawIA) v)) w) (hom H _ _)) (cong (λ s → ap (H .rawIA) s w) (hom H _ _)))
+
+
+
+RawAppTrans : (Set a → Set b) → (Set a → Set c) → Set (suc a ⊔ b ⊔ c)
+RawAppTrans F G = ∀ {A} → Applicative F → Applicative G → F A → G A
+
+record AppTrans {b} {F₀ G₀ : Set a → Set b} (t : RawAppTrans F₀ G₀) : Set (suc a ⊔ suc b) where
+  field
+    t-pure : (F : Applicative F₀) (G : Applicative G₀) → (x : A) → t F G (pure (F .rawIA) x) ≡ pure (G .rawIA) x
+    t-ap   : (F : Applicative F₀) (G : Applicative G₀) → (x : F₀ A) (f : F₀ (A → B))
+           → t F G (ap (F .rawIA) f x) ≡ ap (G .rawIA) (t F G f) (t F G x)
+
+open AppTrans public

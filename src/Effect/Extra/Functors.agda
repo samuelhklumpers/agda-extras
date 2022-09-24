@@ -1,6 +1,6 @@
 {-# OPTIONS --without-K --safe #-}
 
-module Functors where
+module Effect.Extra.Functors where
 
 open import Function.Base using (id; _∘′_)
 open import Effect.Functor using (RawFunctor) public
@@ -12,8 +12,6 @@ private
   variable
     a b : Level
     A B C : Set a
-
---open RawFunctor public
 
 fmap : ∀ {A B : Set a} {F : Set a → Set b} → RawFunctor F → (A → B) → F A → F B
 fmap F = F .RawFunctor._<$>_

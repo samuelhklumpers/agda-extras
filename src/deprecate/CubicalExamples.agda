@@ -15,9 +15,9 @@ open import Function.Inverse
 
 open import Extensionality
 open import Representables
-open import Monads
-open import Applicatives
-open import Functors
+open import Effect.Extra.Monads
+open import Effect.Extra.Applicatives
+open import Effect.Extra.Functors
 
 
 private
