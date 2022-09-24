@@ -8,7 +8,7 @@ open import Data.Product.Relation.Binary.Lex.Strict
 open import Data.Sum hiding (reduce)
 open import Data.Nat.Induction as N
 open import Data.Nat.Properties
-open import Function.Base using (_$′_; _∘′_; id; _on_)
+open import Function.Base using (_$′_; _∘′_; id ; _on_)
 open import Induction.Lexicographic
 open import Induction
 open import Induction.WellFounded as WF

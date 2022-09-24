@@ -13,7 +13,7 @@ private
     a b : Level
     A B C : Set a
 
-fmap : ∀ {A B : Set a} {F : Set a → Set b} → RawFunctor F → (A → B) → F A → F B
+fmap : {F : Set a → Set b} → RawFunctor F → (A → B) → F A → F B
 fmap F = F .RawFunctor._<$>_
 
 record Functor (F : Set a → Set b) : Set (suc a ⊔ b) where
