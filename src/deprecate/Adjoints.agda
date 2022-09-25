@@ -1,4 +1,4 @@
-module Monads where
+module Adjoints where
 
 open import Effect.Monad
 

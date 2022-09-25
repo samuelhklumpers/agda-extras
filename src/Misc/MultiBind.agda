@@ -1,4 +1,4 @@
-module Util where
+module MultiBind where
 
 open import Level
 open import Effect.Monad

@@ -1,0 +1,97 @@
+open import Level using (Level)
+
+
+module Recursive where
+
+private variable
+  i f : Level
+  
+
+{-
+data List (a : Set f) : Set f where
+  []  : List a
+  _∷_ : a → List a → List a
+
+data ListF (a b : Set f) : Set f where
+  Nil  : ListF a b
+  Cons : a → b → ListF a b
+
+data Base (t : Set f) : Set (suc f) where
+  base : (Set f → Set f) → Base t
+
+instance
+  ListBase : {a : Set f} → Base (List a)
+  ListBase {a = a} = base (ListF a)
+    
+based : {t : Set f} → Base t → (a : Set f) → Set f
+based (base b) a = b a
+
+record Recursive (t : Set f) : Set (suc f) where
+  field
+    {{basing}} : Base t
+    fmap : ∀ {x y} → (x → y) → based basing x → based basing y  
+    project : t → based basing t 
+
+open Recursive {{...}}
+
+cata : {t a : Set f} → {{r : Recursive t}} → (based basing a → a) → t → a
+cata f x = f v
+  where
+    s = project x
+    v = fmap (cata f) s
+    
+record IRecursive {I : Set i} (R : I → Set f → Set f) : Set {!!} where
+  field
+    project : {!!}
+-}
+
+
+data ℕ : Set where
+  zero : ℕ
+  succ : ℕ → ℕ
+
+
+data Vec (A : Set f) : ℕ → Set f where
+  []  : Vec A zero
+  _∷_ : ∀ {n} → A → Vec A n → Vec A (succ n)
+
+data _×_ (A B : Set f) : Set f where
+  _,_ : A → B → A × B
+
+data VecF (a b : Set f) : ℕ → Set f where
+  vec[]F : VecF a b zero
+  vec::F : ∀ {n} → a → b → VecF a b (succ n)
+
+data ⊥ {f} : Set f where 
+
+⊥-elim : {A : Set f} → ⊥ {f} → A
+⊥-elim ()
+
+VF : Set f → ℕ → Set f
+VF A zero     = ⊥
+VF A (succ n) = Vec A n
+
+project : ∀ {n} {A : Set f} → Vec A n → VecF A (VF A n) n
+project []      = vec[]F
+project (x ∷ v) = vec::F x v
+
+fmap : ∀ {n} {A B C : Set f} → (A → B) → VecF C A n → VecF C B n
+fmap f vec[]F       = vec[]F
+fmap f (vec::F x y) = vec::F x (f y)
+
+data _<_ : ℕ → ℕ → Set where
+  z<s : ∀ {n} → zero < n
+  s<s : ∀ {n m} → n < m → succ n < succ m
+
+n<s : ∀ {n} → n < succ n
+n<s {zero}   = z<s
+n<s {succ n} = s<s n<s
+
+p : ∀ {n} {a b : Set f} → (∀ {m} → m < n → Vec a m → b) → VF a n → b
+p {n = zero}   f v = ⊥-elim v
+p {n = succ n} f v = f n<s v
+
+cata : ∀ {n} {a b : Set f} → (∀ {m} → m VecF a b m → b) → Vec a n → b
+cata f p v = {!!}
+
+-- f (fmap (p (cata f)) (project v))
