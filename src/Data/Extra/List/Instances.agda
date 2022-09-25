@@ -138,9 +138,9 @@ ListTr = record {
               _ ∎
               )
             lemma x (y ∷ xs) = begin
-              LHS ≡⟨ proj₂ (simplify F LHS') ⟩
-              runFreeAL FA (proj₁ (simplify F LHS')) ≡⟨ refl ⟩
-              runFreeAL FA (proj₁ (simplify F RHS')) ≡˘⟨ proj₂ (simplify F RHS') ⟩
+              LHS ≡˘⟨ simplify-≈ F LHS' ⟩
+              runFreeAL FA (simplify LHS') ≡⟨ refl ⟩
+              runFreeAL FA (simplify RHS') ≡⟨ simplify-≈ F RHS' ⟩
               RHS ∎
                 where
                   LHS = apF (apF (apF (apF (pureF _∘′_) (pureF (_$′ traverse ListRawTr GA g))) (pureF ((_∘′_ ∘′ apG ∘′ apG (pureG _∷_)) ∘′ g))) (f x)) (apF (apF (pureF _∷_) (f y)) (trav FA f xs))
