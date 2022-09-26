@@ -60,32 +60,7 @@ take zero     s = []
 take (succ n) s = hd s ∷ take n (tl s)
 
 instance
-  StreamRep : PreRepresentable {a = a} {c = 0ℓ} Stream
-  StreamRep = record {
-    Rep = ℕ ;
-    rep = inverse lookup generate section retract }
-      where
-        lookup : Stream A → ℕ → A
-        lookup s zero     = hd s
-        lookup s (succ i) = lookup (tl s) i
-
-        generate : (ℕ → A) → Stream A
-        hd (generate f) = f 0
-        tl (generate f) = generate (λ x → f (succ x))
-
-        sec : (x : Stream A) → generate (lookup x) ≈ x
-        hd-≈ (sec x) = λ _ → hd x
-        tl-≈ (sec x) = sec (tl x)
-
-        section : (x : Stream A) → generate (lookup x) == x
-        section x = pathToEq (bisim (sec x))
-
-        ret : (f : ℕ → A) → (i : ℕ) → lookup (generate f) i == f i
-        ret f 0        = refl
-        ret f (succ i) = ret (λ x → f (succ x)) i
-
-        retract : (f : ℕ → A) → lookup (generate f) == f
-        retract f = f-ext (ret f)
+  
 
 open module RTM {a} = RepToMon {a = a} {c = 0ℓ} Stream
 open module MTA {a} = MonToApp {a = a} {I = ⊤} (λ _ _ → Stream)
