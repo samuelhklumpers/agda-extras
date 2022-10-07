@@ -93,14 +93,12 @@ comp-hom : ∀ {a b p} {I : Set p} {H' : HIFun I a b} {i j : I} {A B C : Set a} 
 comp-hom H u v w = trans (sym (a-comp H _ _ _)) (trans (cong (λ s → ap (H .rawIA) (ap (H .rawIA) s (pure (H .rawIA) v)) w) (hom H _ _)) (cong (λ s → ap (H .rawIA) s w) (hom H _ _)))
 
 
+_∹>_ : (Set a → Set b) → (Set a → Set c) → Set (suc a ⊔ b ⊔ c)
+F ∹> G = ∀ {A} → F A → G A
 
-RawAppTrans : (Set a → Set b) → (Set a → Set c) → Set (suc a ⊔ b ⊔ c)
-RawAppTrans F G = ∀ {A} → Applicative F → Applicative G → F A → G A
-
-record AppTrans {b} {F₀ G₀ : Set a → Set b} (t : RawAppTrans F₀ G₀) : Set (suc a ⊔ suc b) where
+record AppTrans {b} {F₀ G₀ : Set a → Set b} (F : Applicative F₀) (G : Applicative G₀) (morph : F₀ ∹> G₀) : Set (suc a ⊔ suc b) where
   field
-    t-pure : (F : Applicative F₀) (G : Applicative G₀) → (x : A) → t F G (pure (F .rawIA) x) ≡ pure (G .rawIA) x
-    t-ap   : (F : Applicative F₀) (G : Applicative G₀) → (x : F₀ A) (f : F₀ (A → B))
-           → t F G (ap (F .rawIA) f x) ≡ ap (G .rawIA) (t F G f) (t F G x)
+    t-pure : (x : A) → morph (pure (F .rawIA) x) ≡ pure (G .rawIA) x
+    t-ap   : (x : F₀ A) (f : F₀ (A → B)) → morph (ap (F .rawIA) f x) ≡ ap (G .rawIA) (morph f) (morph x)
 
 open AppTrans public

@@ -18,8 +18,8 @@ open Monoid
 
 ConstRawA : {M : Set a} → RawMonoid M → RawApplicative {a = b} (Const M)
 ConstRawA mon = record {
-  pure = λ _ → mkConst mempty ;
-  ap = λ { (mkConst x) (mkConst y) → mkConst (x <> y) } }
+  pure = λ _ → mkConst memptyM ;
+  ap = λ { (mkConst x) (mkConst y) → mkConst (x <>M y) } }
     where
-      open RawMonoid mon
-      open RawSemigroup rawMS
+      open RawMonoid mon renaming (mempty to memptyM)
+      open RawSemigroup (mon .rawS) renaming (_<>_ to _<>M_)

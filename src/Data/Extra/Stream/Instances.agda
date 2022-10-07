@@ -179,5 +179,3 @@ StreamRep {a = a} = record
       ret' : (f : ℕ → A) (k : ℕ) → Path A (lookup' (S.tabulate f) k) (f k)
       ret' f zero    i = f 0
       ret' f (suc k) i = ret' (f ∘′ suc) k i
-
--- TODO Traversable Stream
