@@ -2,17 +2,7 @@
 
 module Data.Extra.Compose where
 
-open import Function.Base using (id; _∘′_)
 open import Level
-open import Relation.Binary.PropositionalEquality
-open import Effect.Functor
-open import Effect.Monad
-
-open import Effect.Extra.Functors
-open import Effect.Extra.Applicatives
-open import Extensionality
-
-open ≡-Reasoning
 
 private
   variable

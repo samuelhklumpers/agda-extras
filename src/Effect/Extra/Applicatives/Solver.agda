@@ -1,26 +1,26 @@
-{-# OPTIONS --safe --experimental-lossy-unification #-}
+{-# OPTIONS --safe --lossy-unification #-}
 
 module Effect.Extra.Applicatives.Solver where
 
+open import Prelude
+
 open import Data.Sum.Base hiding (reduce)
 open import Function.Base using (_$′_; _∘′_; id ; _on_)
-open import Agda.Primitive
-open import Relation.Binary.PropositionalEquality.Core
 
 open import Effect.Extra.Applicatives
 open import Misc.Cong-Reasoning
 
 open ≡-Reasoning
 
-open import Reflection
+open import Reflection renaming (pure to pureT)
 open import Reflection.AST.Argument
 open import Reflection.AST.Term as Term
 open import Reflection.AST.Name as Name
-open import Reflection.TCM.Syntax renaming (pure to pureT)
+open import Reflection.TCM.Syntax
 open import Data.List.Reflection
 import Data.Vec.Reflection as Vec
 open import Data.Unit.Base using (⊤)
-open import Data.Nat.Base
+open import Data.Nat.Base hiding (_⊔_)
 open import Data.Vec.Base   as Vec     using (Vec; _∷_; [])
 open import Data.Maybe.Base as Maybe   using (Maybe; just; nothing; fromMaybe)
 open import Data.List.Base  as List    using (List; _∷_; [])
@@ -28,28 +28,28 @@ open import Data.List.Base  as List    using (List; _∷_; [])
 
 private
   variable
-    a b : Level
+    a b c : Level
 
 
 --* Intermediate datastructures
-data AppRep (F : Set a → Set a) (A : Set a) : Set (lsuc a) where
+data AppRep (F : Set a → Set b) (A : Set a) : Set (lsuc a ⊔ b) where
   Pure : A → AppRep F A
   Raw  : F A → AppRep F A
   _◯_  : {B : Set a} → AppRep F (B → A) → AppRep F B → AppRep F A
 
-apR : ∀ {A B} {F : Set a → Set a} → AppRep F (B → A) → AppRep F B → AppRep F A
+apR : ∀ {A B} {F : Set a → Set b} → AppRep F (B → A) → AppRep F B → AppRep F A
 apR = _◯_
 
 -- FreeAL F A represents a value F A in its left associating simplified form, that is, having a single pure at the left, followed by a chain of zero or more applications like
 -- ((pure f ⊛ u) ⊛ v) ⊛ ...
 -- adapted from https://arxiv.org/abs/1403.0749 and https://hackage.haskell.org/package/free-5.1.9/docs/Control-Applicative-Trans-Free.html
-data FreeAL (F : Set a → Set a) (A : Set a) : Set (lsuc a) where
+data FreeAL (F : Set a → Set b) (A : Set a) : Set (lsuc a ⊔ b) where
   PureL : A → FreeAL F A
   _:*:_ : {B : Set a} → FreeAL F (B → A) → F B → FreeAL F A
 
 
 --* Conversion from intermediate structure to terms
-module _ {F : Set a → Set a} (F' : RawApplicative F) where
+module _ {F : Set a → Set b} (F' : RawApplicative F) where
   private
     open module X = RawIApplicative F' renaming (pure to pureF; ap to apF)
     
@@ -67,7 +67,7 @@ module _ {F : Set a → Set a} (F' : RawApplicative F) where
 
 
 --* Zipping
-module _ {a : Level} {F : Set a → Set a} where
+module _ {F : Set a → Set b} where
   private
     variable
       A B C D : Set a
@@ -88,7 +88,7 @@ module _ {a : Level} {F : Set a → Set a} where
 
 
 --* Theorem: simplify' respects equality
-module SimplifyTheorem {a : Level} {F : Set a → Set a} (F'' : Applicative F) where
+module SimplifyTheorem {F : Set a → Set b} (F'' : Applicative F) where
   private
     F' = F'' .rawIA
     
@@ -132,15 +132,15 @@ getVisible _                            = nothing
 
 getVisibleArgs : ∀ n → Term → Maybe (Vec Term n)
 getVisibleArgs n (def _ xs) = Maybe.map Vec.reverse
-  (List.foldl f c (List.mapMaybe getVisible xs) n)
+  (List.foldl f invis (List.mapMaybe getVisible xs) n)
   where
   f : (∀ n → Maybe (Vec Term n)) → Term → ∀ n → Maybe (Vec Term n)
   f xs x zero    = just []
   f xs x (suc n) = Maybe.map (x ∷_) (xs n)
 
-  c : ∀ n → Maybe (Vec Term n)
-  c zero     = just []
-  c (suc _ ) = nothing
+  invis : ∀ n → Maybe (Vec Term n)
+  invis zero     = just []
+  invis (suc _ ) = nothing
 getVisibleArgs _ _ = nothing
 
 malformedGoalError : ∀ {a} {A : Set a} → Term → TC A
@@ -168,21 +168,21 @@ convertTerm `app = convert
     convert : Term → TC Term
     convert (def (quote ap)   xs) = convertOp₂ (quote _◯_)  xs
     convert (def (quote pure) xs) = convertOp₁ (quote Pure) xs
-    convert t = return (con (quote Raw) (t ⟨∷⟩ []))
+    convert t = pureT (con (quote Raw) (t ⟨∷⟩ []))
 
     convertOp₂ : Name → Args Term → TC Term
     convertOp₂ nm (x ⟨∷⟩ y ⟨∷⟩ []) = do
       x' ← convert x
       y' ← convert y
-      return (con nm (x' ⟨∷⟩ y' ⟨∷⟩ []))
+      pureT (con nm (x' ⟨∷⟩ y' ⟨∷⟩ []))
     convertOp₂ nm (x ∷ xs)         = convertOp₂ nm xs
-    convertOp₂ _  _                = return unknown
+    convertOp₂ _  _                = pureT unknown
 
     convertOp₁ : Name → Args Term → TC Term
     convertOp₁ nm (x ⟨∷⟩ []) = do
-      return (con nm (x ⟨∷⟩ []))
+      pureT (con nm (x ⟨∷⟩ []))
     convertOp₁ nm (x ∷ xs)   = convertOp₁ nm xs
-    convertOp₁ _  _          = return unknown
+    convertOp₁ _  _          = pureT unknown
 
     {-
     convertUnknownName : Name → Args Term → TC Term
@@ -193,10 +193,10 @@ convertTerm `app = convert
           if (nameTerm =α= neg) then convertOp₁ (quote ⊝_)  xs else
             if (nameTerm =α= pow) then convertExp             xs else
               if (nameTerm =α= sub) then convertSub            xs else
-                return (`Κ (def nm xs))
+                pureT (`Κ (def nm xs))
 
     convertSuc : Term → TC Term
-    convertSuc x = do x' ← convert x; return (quote _⊕_ $ᵉ (`Κ (toTerm 1) ⟨∷⟩ x' ⟨∷⟩ []))
+    convertSuc x = do x' ← convert x; pureT (quote _⊕_ $ᵉ (`Κ (toTerm 1) ⟨∷⟩ x' ⟨∷⟩ []))
     -}
 
 `sym : Term → Term
@@ -215,7 +215,7 @@ simplify-solution `app `lhs = do
   debugPrint "simplify-solution" 2 (strErr "original term " ∷ termErr `lhs ∷ [])
   debugPrint "simplify-solution" 2 (strErr "term representation " ∷ termErr `lhsRep ∷ [])
  
-  return (`correct `app `lhsRep)
+  pureT (`correct `app `lhsRep)
 
 solve-solution : Term → Term → Term → TC Term
 solve-solution `app `lhs `rhs = do
@@ -228,7 +228,7 @@ solve-solution `app `lhs `rhs = do
   debugPrint "solve-solution" 2 (strErr "original rhs " ∷ termErr `rhs ∷ [])
   debugPrint "solve-solution" 2 (strErr "rhs representation " ∷ termErr `rhsRep ∷ [])
 
-  return (`trans (`correct `app `lhsRep) (`sym (`correct `app `rhsRep)))
+  pureT (`trans (`correct `app `lhsRep) (`sym (`correct `app `rhsRep)))
 
 
 `Applicative : Term

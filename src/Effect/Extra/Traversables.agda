@@ -21,10 +21,13 @@ open import Structures.Monoids
 open import Structures.Semigroups
 
 
+open ≡-Reasoning
+
+
 private
   variable
     a b c d : Level
-    A B C : Set a
+    A B C D : Set a
 
 
 record RawTraversable {b} (T : Set a → Set a) : Set (suc a ⊔ suc b) where
@@ -33,12 +36,6 @@ record RawTraversable {b} (T : Set a → Set a) : Set (suc a ⊔ suc b) where
 
 open RawTraversable public
 
-
-constRawA : Monoid A → RawApplicative {a = a} {b = b} (const A)
-constRawA M = record { pure = const memptyM ; ap = _<>M_ }
-  where
-    open RawMonoid (M .rawM) renaming (mempty to memptyM)
-    open RawSemigroup (M .semi .rawS) renaming (_<>_ to _<>M_)
     
 idRawA : RawApplicative {a = a} id
 idRawA = record { pure = id ; ap = id }
@@ -72,7 +69,7 @@ record Traversable {a} (T : Set a → Set a) : Setω where
 open Traversable public
 
 
-module TravToFold {a} {F : Set a → Set a} where
+module TravToFold {F : Set a → Set a} where
   rawTTFold : ∀ {b} → RawTraversable {b = b} F → Foldable {c = b} F
   rawTTFold {b = b} T = record { foldMap = λ M f xs → traverse T {B = ⊥} (constRawA M) f xs }
 
