@@ -1,4 +1,6 @@
+```agda
 module Data.Extra.Normal where
+```
 
 open import Level
 open import Data.Nat.Base using (ℕ)

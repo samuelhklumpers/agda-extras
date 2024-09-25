@@ -1,19 +1,15 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --cubical-compatible #-}
 
 module Data.Extra.Compose.Instances {a b c} {G : Set b → Set c} {F : Set a → Set b} where
 
-open import Effect.Functor
-open import Function.Base using (id; _∘′_)
-open import Level
-open import Relation.Binary.PropositionalEquality
+open import Prelude
+open import Extensionality
 
 open import Data.Extra.Compose
 open import Effect.Extra.Functors
 open import Effect.Extra.Applicatives
-open import Extensionality
 
 open ≡-Reasoning
-
 
 CompRawF : RawFunctor G → RawFunctor F → RawFunctor (Compose G F)
 CompRawF G F = record
@@ -42,12 +38,3 @@ CompRawA G F = record
     open RawIApplicative G renaming (pure to pureG; _⊛_ to _⊛G_)
     open RawIApplicative F renaming (pure to pureF; _⊛_ to _⊛F_)
     open RawFunctor (rawATF G) renaming (_<$>_ to mapG)
-
-{-
-CompRawM : {G : Set a → Set a} {F : Set a → Set a} → RawMonad G → RawMonad F → ? F G → RawMonad (Compose G F)
-CompRawM = ?
-
-{-record {
-return = λ x → compose (return (return x)) ;
-_>>=_ = λ { (compose x) f → {!!} } }-}
--}

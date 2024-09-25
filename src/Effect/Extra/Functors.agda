@@ -1,11 +1,9 @@
-{-# OPTIONS --without-K --safe #-}
+{-# OPTIONS --cubical-compatible --safe #-}
 
 module Effect.Extra.Functors where
 
-open import Function.Base using (id; _∘′_)
+open import Prelude
 open import Effect.Functor using (RawFunctor) public
-open import Level using (Level; suc; _⊔_)
-open import Relation.Binary.PropositionalEquality using (_≡_)
 
 
 private
@@ -16,7 +14,7 @@ private
 fmap : {F : Set a → Set b} → RawFunctor F → (A → B) → F A → F B
 fmap F = F .RawFunctor._<$>_
 
-record Functor (F : Set a → Set b) : Set (suc a ⊔ b) where
+record Functor (F : Set a → Set b) : Set (lsuc a ⊔ b) where
   field 
     rawF : RawFunctor F
 

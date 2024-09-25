@@ -157,25 +157,25 @@ StreamM = record
   ; right-id = λ m → pathToEq (diagonal-repeatʳ m)
   ; assoc = λ m f g → pathToEq (bind-assoc g f m) }
 
-StreamRep : Representable {a = a} {c = lzero} Stream
-StreamRep {a = a} = record
-  { Rep = ℕ ;
-    rep = inverse lookup' S.tabulate sec ret
-  }
-  where
-    lookup' : {A : Set a} (x : Stream A) → ℕ → A
-    lookup' x i = S.lookup i x
+-- StreamRep : Representable {a = a} {c = lzero} Stream
+-- StreamRep {a = a} = record
+--   { Rep = ℕ ;
+--     rep = inverse lookup' S.tabulate sec ret
+--   }
+--   where
+--     lookup' : {A : Set a} (x : Stream A) → ℕ → A
+--     lookup' x i = S.lookup i x
 
-    sec : {A : Set a} (x : Stream A) → S.tabulate (lookup' x) ≡ x
-    sec {A = A} x = pathToEq (sec' x)
-      where
-      sec' : (x : Stream A) → Path (Stream A) (S.tabulate (lookup' x)) x
-      head (sec' x i) = head x
-      tail (sec' x i) = sec' (tail x) i 
+--     sec : {A : Set a} (x : Stream A) → S.tabulate (lookup' x) ≡ x
+--     sec {A = A} x = pathToEq (sec' x)
+--       where
+--       sec' : (x : Stream A) → Path (Stream A) (S.tabulate (lookup' x)) x
+--       head (sec' x i) = head x
+--       tail (sec' x i) = sec' (tail x) i 
 
-    ret : {A : Set a} (f : ℕ → A) → lookup' (S.tabulate f) ≡ f
-    ret {A = A} f = pathToEq (λ i k → ret' f k i) -- this is f-ext
-      where
-      ret' : (f : ℕ → A) (k : ℕ) → Path A (lookup' (S.tabulate f) k) (f k)
-      ret' f zero    i = f 0
-      ret' f (suc k) i = ret' (f ∘′ suc) k i
+--     ret : {A : Set a} (f : ℕ → A) → lookup' (S.tabulate f) ≡ f
+--     ret {A = A} f = pathToEq (λ i k → ret' f k i) -- this is f-ext
+--       where
+--       ret' : (f : ℕ → A) (k : ℕ) → Path A (lookup' (S.tabulate f) k) (f k)
+--       ret' f zero    i = f 0
+--       ret' f (suc k) i = ret' (f ∘′ suc) k i

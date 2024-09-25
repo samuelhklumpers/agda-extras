@@ -1,7 +1,7 @@
 module Data.Extra.List.Instances where
 
 open import Level
-open import Data.List
+open import Data.List.Base using (List; []; _∷_; _++_)
 open import Data.Product
 open import Data.List.Properties
 open import Function.Base

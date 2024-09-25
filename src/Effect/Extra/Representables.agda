@@ -1,12 +1,15 @@
-{-# OPTIONS --without-K #-}
+{-# OPTIONS --cubical-compatible #-}
 
 module Effect.Extra.Representables where
 
 open import Level
 open import Relation.Binary.PropositionalEquality
 open import Function using (const)
-open import Function.Inverse hiding (sym)
-open import Function.Equality hiding (const; cong)
+
+open import Function.Bundles using (Inverse; _↔_)
+
+--open import Function.Inverse hiding (sym)
+--open import Function.Equality hiding (const; cong)
 open import Data.Unit
 
 open import Data.Extra.Function.Instances
@@ -26,15 +29,16 @@ private
 Inv : ∀ f t → Set f → Set t → Set (f ⊔ t)
 Inv f t = _↔_ {f} {t}
 
+{-
 record Representable (F : Set a → Set b) : Set (suc a ⊔ b ⊔ suc c) where
   field
     Rep : Set c
     rep : {A : Set a} → (F A) ↔ (Rep → A)
 
   index : {A : Set a} → F A → Rep → A
-  index = Π._⟨$⟩_ (Inverse.to rep)
+  index = {!Π._⟨$⟩_ (Inverse.to rep)!}
   tabulate : {A : Set a} → (Rep → A) → F A
-  tabulate = Π._⟨$⟩_ (Inverse.from rep)
+  tabulate = {!Π._⟨$⟩_ (Inverse.from rep)!}
 
 open Representable public -- asymmetric...
 
@@ -69,3 +73,4 @@ module RepToMon {a b c} (F : Set a → Set b) where
           RRM = record {
             return = λ x   → tabulate R (return FRM x) ;
             _>>=_  = λ m f → tabulate R (bind FRM (index R m) λ a → index R (f a)) }
+-}
